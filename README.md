@@ -2,7 +2,7 @@
 
 Street Racer is a 2D open-world driving game that turns real cities into playable race environments.
 
-Instead of handcrafted tracks, Street Racer loads real street geometry from OpenStreetMap and lets you drive it as an arcade-style top-down racer. Cities are not “themes” — they *are* the tracks themselves.
+Instead of handcrafted tracks, Street Racer loads real street geometry from OpenStreetMap and lets you drive it as an arcade-style top-down racer. Cities are not “themes” they *are* the tracks themselves.
 
 Every street, curve, bridge, and grid comes from the real world. The city becomes the course.
 
@@ -68,7 +68,7 @@ This build is intentionally lightweight and runs directly in the browser.
 Street Racer is the first step toward a larger idea:  
 **the real world as a race space.**
 
-This 2D version establishes the core concept — that any city can become a track. Future development will expand on this foundation:
+This 2D version establishes the core concept that any city can become a track. Future development will expand on this foundation:
 
 - Additional cities and regions  
 - More structured race routes based on real geography  
