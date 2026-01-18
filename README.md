@@ -83,4 +83,17 @@ By playing this beta, you are experiencing the beginning of that direction.
 
 ---
 
+## Open Data & Attribution
+
+Street Racer uses open geographic data and community services:
+
+- Street and building geometry is sourced from **OpenStreetMap contributors**  
+  © OpenStreetMap contributors — https://www.openstreetmap.org
+
+- Road data is retrieved via the **Overpass API**, a community-operated service for querying OpenStreetMap data.
+
+- Background map tiles may be loaded from OpenStreetMap or third-party providers depending on in-game mode.
+
+OpenStreetMap data is available under the Open Database License (ODbL).  
+This project uses the data at runtime and does not redistribute a derived map database.
 
