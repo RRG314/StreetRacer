@@ -1,0 +1,1764 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Street Racer - Baltimore & Hollywood</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@300;500;700&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { background: #0a0a0f; overflow: hidden; font-family: 'Rajdhani', sans-serif; }
+        
+        /* ===== TITLE SCREEN ===== */
+        #titleScreen { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: linear-gradient(135deg, #0a0a0f 0%, #1a1a2f 50%, #0a0a0f 100%); display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 2000; }
+        #titleScreen.hidden { display: none; }
+        .title-logo { font-family: 'Orbitron', monospace; font-size: 56px; font-weight: 900; color: #00ffc8; text-shadow: 0 0 20px #00ffc8, 0 0 40px #00ffc8, 0 0 80px rgba(0,255,200,0.5); letter-spacing: 8px; margin-bottom: 10px; animation: titlePulse 2s ease-in-out infinite; }
+        .title-subtitle { font-family: 'Rajdhani', sans-serif; font-size: 20px; color: rgba(255,255,255,0.5); letter-spacing: 8px; text-transform: uppercase; margin-bottom: 40px; }
+        @keyframes titlePulse { 0%, 100% { text-shadow: 0 0 20px #00ffc8, 0 0 40px #00ffc8; } 50% { text-shadow: 0 0 30px #00ffc8, 0 0 60px #00ffc8, 0 0 100px rgba(0,255,200,0.8); } }
+        
+        /* Tab Container */
+        .menu-container { background: rgba(0,0,0,0.6); border: 1px solid rgba(0,255,200,0.2); border-radius: 16px; width: 500px; max-width: 95vw; overflow: hidden; }
+        
+        /* Tab Navigation */
+        .tab-nav { display: flex; border-bottom: 1px solid rgba(0,255,200,0.2); }
+        .tab-btn { flex: 1; background: transparent; border: none; padding: 16px 20px; font-family: 'Orbitron', monospace; font-size: 12px; color: rgba(255,255,255,0.4); cursor: pointer; transition: all 0.3s; text-transform: uppercase; letter-spacing: 2px; position: relative; }
+        .tab-btn:hover { color: rgba(255,255,255,0.7); background: rgba(255,255,255,0.05); }
+        .tab-btn.active { color: #00ffc8; background: rgba(0,255,200,0.1); }
+        .tab-btn.active::after { content: ''; position: absolute; bottom: 0; left: 0; right: 0; height: 2px; background: #00ffc8; }
+        
+        /* Tab Content */
+        .tab-content { display: none; padding: 25px 30px; }
+        .tab-content.active { display: block; }
+        
+        /* Location Tab */
+        .location-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
+        .location-card { background: rgba(0,0,0,0.4); border: 2px solid rgba(0,255,200,0.2); border-radius: 12px; padding: 20px; cursor: pointer; transition: all 0.3s; text-align: center; }
+        .location-card:hover { border-color: rgba(0,255,200,0.5); background: rgba(0,255,200,0.05); }
+        .location-card.selected { border-color: #00ffc8; background: rgba(0,255,200,0.15); box-shadow: 0 0 20px rgba(0,255,200,0.2); }
+        .location-card .city { font-family: 'Orbitron', monospace; font-size: 18px; color: #00ffc8; margin-bottom: 5px; }
+        .location-card .state { font-size: 13px; color: rgba(255,255,255,0.5); }
+        
+        /* Game Mode Tab */
+        .mode-grid { display: flex; flex-direction: column; gap: 12px; }
+        .mode-card { background: rgba(0,0,0,0.4); border: 2px solid rgba(255,255,255,0.15); border-radius: 12px; padding: 18px 20px; cursor: pointer; transition: all 0.3s; display: flex; align-items: center; gap: 15px; }
+        .mode-card:hover { border-color: rgba(255,255,255,0.3); background: rgba(255,255,255,0.05); }
+        .mode-card.selected { border-color: #ff3366; background: rgba(255,51,102,0.15); box-shadow: 0 0 15px rgba(255,51,102,0.2); }
+        .mode-card .mode-icon { font-size: 28px; width: 45px; text-align: center; }
+        .mode-card .mode-text { flex: 1; }
+        .mode-card .mode-name { font-family: 'Orbitron', monospace; font-size: 15px; color: #fff; margin-bottom: 3px; }
+        .mode-card .mode-desc { font-size: 12px; color: rgba(255,255,255,0.5); }
+        .mode-card .mode-check { width: 20px; height: 20px; border: 2px solid rgba(255,255,255,0.2); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 12px; color: transparent; }
+        .mode-card.selected .mode-check { border-color: #ff3366; color: #ff3366; }
+        
+        /* Controls Tab */
+        .controls-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px 20px; }
+        .control-row { display: flex; align-items: center; gap: 10px; padding: 6px 0; }
+        .control-keys { display: flex; gap: 4px; min-width: 70px; }
+        .control-key { background: rgba(0,255,200,0.15); border: 1px solid rgba(0,255,200,0.3); border-radius: 4px; padding: 4px 8px; font-family: 'Orbitron', monospace; font-size: 10px; color: #00ffc8; }
+        .control-action { font-size: 12px; color: rgba(255,255,255,0.7); }
+        .controls-section-title { grid-column: 1 / -1; font-family: 'Orbitron', monospace; font-size: 11px; color: #ff3366; text-transform: uppercase; letter-spacing: 1px; margin-top: 12px; margin-bottom: 4px; padding-bottom: 6px; border-bottom: 1px solid rgba(255,51,102,0.2); }
+        .controls-section-title:first-child { margin-top: 0; }
+        
+        /* Start Button */
+        .start-section { padding: 20px 30px; border-top: 1px solid rgba(0,255,200,0.2); }
+        .start-btn { width: 100%; background: linear-gradient(135deg, #00ffc8 0%, #00aa88 100%); border: none; border-radius: 10px; padding: 18px; font-family: 'Orbitron', monospace; font-size: 18px; font-weight: 700; color: #000; cursor: pointer; transition: all 0.3s; text-transform: uppercase; letter-spacing: 4px; }
+        .start-btn:hover { transform: scale(1.02); box-shadow: 0 0 30px rgba(0,255,200,0.4); }
+        
+        .title-footer { position: absolute; bottom: 25px; text-align: center; }
+        .version { color: rgba(255,255,255,0.25); font-size: 11px; }
+        
+        /* ===== PAUSE MENU ===== */
+        #pauseMenu { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.85); display: none; align-items: center; justify-content: center; z-index: 2500; }
+        #pauseMenu.visible { display: flex; }
+        .pause-panel { text-align: center; }
+        .pause-title { font-family: 'Orbitron', monospace; font-size: 48px; color: #00ffc8; margin-bottom: 40px; }
+        .pause-btn { display: block; background: rgba(0,0,0,0.5); border: 2px solid rgba(0,255,200,0.3); border-radius: 10px; padding: 15px 50px; margin: 15px auto; font-family: 'Orbitron', monospace; font-size: 16px; color: #00ffc8; cursor: pointer; transition: all 0.3s; min-width: 250px; }
+        .pause-btn:hover { border-color: #00ffc8; background: rgba(0,255,200,0.1); }
+        
+        /* ===== GAME MODE HUD ===== */
+        #modeHud { position: fixed; top: 80px; left: 50%; transform: translateX(-50%); background: rgba(0,0,0,0.8); border: 1px solid rgba(0,255,200,0.3); border-radius: 10px; padding: 15px 30px; z-index: 100; text-align: center; display: none; }
+        #modeHud.visible { display: block; }
+        .mode-timer { font-family: 'Orbitron', monospace; font-size: 36px; color: #00ffc8; }
+        .mode-info { font-size: 14px; color: rgba(255,255,255,0.6); margin-top: 5px; }
+        .checkpoint-count { font-family: 'Orbitron', monospace; color: #ff3366; }
+        
+        /* ===== CHECKPOINT MARKERS ===== */
+        .checkpoint-marker { position: absolute; width: 30px; height: 30px; border: 3px solid #ff3366; border-radius: 50%; pointer-events: none; animation: checkpointPulse 1s ease-in-out infinite; }
+        @keyframes checkpointPulse { 0%, 100% { box-shadow: 0 0 10px #ff3366; } 50% { box-shadow: 0 0 25px #ff3366, 0 0 40px rgba(255,51,102,0.5); } }
+        
+        /* ===== GAME OVER / RESULTS ===== */
+        #resultsScreen { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.9); display: none; align-items: center; justify-content: center; z-index: 2800; }
+        #resultsScreen.visible { display: flex; }
+        .results-panel { background: linear-gradient(135deg, rgba(20,20,30,0.98) 0%, rgba(10,10,20,0.98) 100%); border: 1px solid rgba(0,255,200,0.3); border-radius: 16px; padding: 40px 60px; text-align: center; }
+        .results-title { font-family: 'Orbitron', monospace; font-size: 32px; color: #00ffc8; margin-bottom: 30px; }
+        .results-time { font-family: 'Orbitron', monospace; font-size: 56px; color: #fff; margin-bottom: 10px; }
+        .results-label { font-size: 14px; color: rgba(255,255,255,0.5); margin-bottom: 30px; }
+        .results-btn { background: linear-gradient(135deg, #00ffc8 0%, #00aa88 100%); border: none; border-radius: 10px; padding: 15px 40px; font-family: 'Orbitron', monospace; font-size: 16px; color: #000; cursor: pointer; margin: 10px; transition: all 0.3s; }
+        .results-btn:hover { transform: scale(1.05); }
+        .results-btn.secondary { background: transparent; border: 1px solid rgba(255,255,255,0.3); color: #fff; }
+        
+        /* ===== EXISTING GAME STYLES ===== */
+        #gameCanvas { display: block; cursor: grab; }
+        #gameCanvas:active { cursor: grabbing; }
+        #hud { position: fixed; top: 0; left: 0; right: 0; padding: 20px 30px; display: flex; justify-content: space-between; align-items: flex-start; pointer-events: none; z-index: 100; }
+        .hud-panel { background: linear-gradient(135deg, rgba(0,0,0,0.85) 0%, rgba(20,20,30,0.95) 100%); border: 1px solid rgba(0, 255, 200, 0.3); border-radius: 8px; padding: 15px 25px; backdrop-filter: blur(10px); }
+        .speed-display { text-align: center; }
+        .speed-value { font-family: 'Orbitron', monospace; font-size: 48px; font-weight: 900; color: #00ffc8; text-shadow: 0 0 10px #00ffc8, 0 0 20px #00ffc8; line-height: 1; transition: color 0.2s; }
+        .speed-value.speeding { color: #ff3366; text-shadow: 0 0 10px #ff3366, 0 0 20px #ff3366; }
+        .speed-label { font-size: 14px; color: rgba(255,255,255,0.5); text-transform: uppercase; letter-spacing: 3px; margin-top: 5px; }
+        .speed-limit { margin-top: 10px; padding-top: 10px; border-top: 1px solid rgba(255,255,255,0.1); font-size: 12px; color: rgba(255,255,255,0.4); }
+        .speed-limit-value { font-family: 'Orbitron', monospace; font-size: 18px; color: #fff; margin-left: 5px; }
+        .info-panel { text-align: right; min-width: 260px; }
+        .street-name { font-family: 'Orbitron', monospace; font-size: 18px; color: #00ffc8; margin-bottom: 12px; padding-bottom: 10px; border-bottom: 1px solid rgba(0, 255, 200, 0.2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .info-row { display: flex; justify-content: space-between; gap: 20px; margin-bottom: 8px; font-size: 14px; }
+        .info-label { color: rgba(255,255,255,0.4); text-transform: uppercase; letter-spacing: 1px; }
+        .info-value { color: #00ffc8; font-family: 'Orbitron', monospace; font-weight: 700; }
+        .status-row { display: flex; gap: 15px; margin-top: 12px; padding-top: 12px; border-top: 1px solid rgba(255,255,255,0.1); }
+        .status-indicator { display: flex; align-items: center; gap: 6px; font-size: 11px; color: rgba(255,255,255,0.3); text-transform: uppercase; }
+        .status-dot { width: 8px; height: 8px; border-radius: 50%; background: rgba(255,255,255,0.2); transition: all 0.2s; }
+        .status-dot.active { background: #00ffc8; box-shadow: 0 0 10px #00ffc8; }
+        .status-dot.warning { background: #ff3366; box-shadow: 0 0 10px #ff3366; }
+        
+        /* Direction indicators */
+        .direction-indicator { position: fixed; width: 40px; height: 40px; pointer-events: none; z-index: 150; display: flex; align-items: center; justify-content: center; }
+        .direction-arrow { font-size: 24px; filter: drop-shadow(0 0 8px currentColor); }
+        .direction-indicator.destination { color: #ffcc00; }
+        .direction-indicator.destination.complete { color: #00ff88; }
+        .direction-indicator.checkpoint { color: #ff3366; }
+        .direction-distance { position: absolute; bottom: -18px; font-family: 'Orbitron', monospace; font-size: 10px; white-space: nowrap; text-shadow: 0 0 5px #000, 0 0 10px #000; }
+        #minimap { position: fixed; bottom: 20px; left: 20px; width: 180px; height: 180px; background: radial-gradient(ellipse at center, rgba(10, 15, 20, 0.95) 0%, rgba(5, 10, 15, 0.98) 100%); border: 1px solid rgba(0, 255, 200, 0.3); border-radius: 8px; z-index: 100; }
+        
+        /* Button stack */
+        .btn-stack { position: fixed; bottom: 20px; right: 20px; display: flex; flex-direction: column; gap: 10px; z-index: 100; }
+        .game-btn { background: linear-gradient(135deg, rgba(0, 255, 200, 0.15) 0%, rgba(0, 200, 150, 0.25) 100%); border: 1px solid rgba(0, 255, 200, 0.4); border-radius: 8px; padding: 10px 16px; color: #00ffc8; font-family: 'Orbitron', monospace; font-size: 11px; text-transform: uppercase; letter-spacing: 1px; cursor: pointer; transition: all 0.3s ease; white-space: nowrap; }
+        .game-btn:hover { background: rgba(0, 255, 200, 0.25); box-shadow: 0 0 15px rgba(0, 255, 200, 0.3); }
+        .game-btn.police { background: linear-gradient(135deg, rgba(255, 50, 50, 0.15) 0%, rgba(50, 50, 255, 0.15) 100%); border-color: rgba(255, 100, 100, 0.4); color: #ff6666; }
+        .game-btn.police.active { background: linear-gradient(135deg, rgba(255, 50, 50, 0.3) 0%, rgba(50, 50, 255, 0.3) 100%); border-color: #ff3333; }
+        .game-btn.location { background: linear-gradient(135deg, rgba(255, 200, 50, 0.15) 0%, rgba(200, 150, 50, 0.2) 100%); border-color: rgba(255, 200, 50, 0.4); color: #ffcc44; }
+        .game-btn.map { background: linear-gradient(135deg, rgba(100, 200, 100, 0.15) 0%, rgba(50, 150, 50, 0.2) 100%); border-color: rgba(100, 200, 100, 0.4); color: #66cc66; }
+        
+        .attribution { position: fixed; bottom: 5px; left: 50%; transform: translateX(-50%); font-size: 10px; color: rgba(255,255,255,0.2); z-index: 10; }
+        .attribution a { color: rgba(255,255,255,0.3); }
+        
+        /* Controls Tab (expandable during gameplay) */
+        #controlsTab { position: fixed; bottom: 210px; left: 20px; z-index: 100; display: none; }
+        #controlsTab.visible { display: block; }
+        .controls-tab-header { background: linear-gradient(135deg, rgba(0,0,0,0.85) 0%, rgba(20,20,30,0.95) 100%); border: 1px solid rgba(0, 255, 200, 0.3); border-radius: 8px; padding: 10px 16px; cursor: pointer; display: flex; align-items: center; gap: 10px; transition: all 0.3s; }
+        .controls-tab-header:hover { background: rgba(0, 255, 200, 0.1); border-color: rgba(0, 255, 200, 0.5); }
+        .controls-tab-header .tab-icon { font-size: 14px; }
+        .controls-tab-header .tab-label { font-family: 'Orbitron', monospace; font-size: 11px; color: #00ffc8; text-transform: uppercase; letter-spacing: 1px; }
+        .controls-tab-header .tab-arrow { font-size: 10px; color: rgba(255,255,255,0.5); transition: transform 0.3s; }
+        #controlsTab.expanded .controls-tab-header .tab-arrow { transform: rotate(180deg); }
+        .controls-tab-content { background: linear-gradient(135deg, rgba(0,0,0,0.9) 0%, rgba(20,20,30,0.95) 100%); border: 1px solid rgba(0, 255, 200, 0.2); border-top: none; border-radius: 0 0 8px 8px; padding: 0; max-height: 0; overflow: hidden; transition: max-height 0.3s ease, padding 0.3s ease; }
+        #controlsTab.expanded .controls-tab-content { max-height: 400px; padding: 15px; }
+        .controls-tab-section { margin-bottom: 12px; }
+        .controls-tab-section:last-child { margin-bottom: 0; }
+        .controls-tab-section-title { font-family: 'Orbitron', monospace; font-size: 10px; color: #ff3366; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px; padding-bottom: 4px; border-bottom: 1px solid rgba(255,51,102,0.2); }
+        .controls-tab-row { display: flex; align-items: center; gap: 10px; margin-bottom: 5px; }
+        .controls-tab-keys { display: flex; gap: 3px; min-width: 55px; }
+        .controls-tab-key { background: rgba(0, 255, 200, 0.15); border: 1px solid rgba(0, 255, 200, 0.3); border-radius: 3px; padding: 2px 6px; font-family: 'Orbitron', monospace; font-size: 9px; color: #00ffc8; }
+        .controls-tab-action { font-size: 11px; color: rgba(255,255,255,0.7); }
+        
+        /* Home button */
+        .home-btn { background: linear-gradient(135deg, rgba(255, 255, 255, 0.1) 0%, rgba(200, 200, 200, 0.15) 100%); border: 1px solid rgba(255, 255, 255, 0.3); border-radius: 8px; padding: 10px 16px; color: #fff; font-family: 'Orbitron', monospace; font-size: 11px; text-transform: uppercase; letter-spacing: 1px; cursor: pointer; transition: all 0.3s ease; }
+        .home-btn:hover { background: rgba(255, 255, 255, 0.2); border-color: rgba(255, 255, 255, 0.5); }
+        
+        /* Loading overlay */
+        #loadingOverlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(10, 15, 20, 0.95); display: none; align-items: center; justify-content: center; flex-direction: column; z-index: 2100; }
+        #loadingOverlay.visible { display: flex; }
+        .loading-spinner { width: 50px; height: 50px; border: 3px solid rgba(0, 255, 200, 0.2); border-top-color: #00ffc8; border-radius: 50%; animation: spin 1s linear infinite; margin-bottom: 20px; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .loading-text { font-family: 'Orbitron', monospace; font-size: 16px; color: #00ffc8; text-align: center; }
+    </style>
+</head>
+<body>
+    <!-- TITLE SCREEN -->
+    <div id="titleScreen">
+        <div class="title-logo">STREET RACER</div>
+        <div class="title-subtitle">Open World Driving</div>
+        
+        <div class="menu-container">
+            <!-- Tab Navigation -->
+            <div class="tab-nav">
+                <button class="tab-btn active" data-tab="location">📍 Location</button>
+                <button class="tab-btn" data-tab="mode">🎮 Game Mode</button>
+                <button class="tab-btn" data-tab="controls">🎹 Controls</button>
+            </div>
+            
+            <!-- Location Tab -->
+            <div class="tab-content active" id="tab-location">
+                <div class="location-grid">
+                    <div class="location-card selected" data-location="baltimore">
+                        <div class="city">Baltimore</div>
+                        <div class="state">Maryland, USA</div>
+                    </div>
+                    <div class="location-card" data-location="hollywood">
+                        <div class="city">Hollywood</div>
+                        <div class="state">California, USA</div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Game Mode Tab -->
+            <div class="tab-content" id="tab-mode">
+                <div class="mode-grid">
+                    <div class="mode-card selected" data-mode="freeRoam">
+                        <div class="mode-icon">🚗</div>
+                        <div class="mode-text">
+                            <div class="mode-name">Free Roam</div>
+                            <div class="mode-desc">Explore the city at your own pace</div>
+                        </div>
+                        <div class="mode-check">✓</div>
+                    </div>
+                    <div class="mode-card" data-mode="timeTrial">
+                        <div class="mode-icon">⏱️</div>
+                        <div class="mode-text">
+                            <div class="mode-name">Time Trial</div>
+                            <div class="mode-desc">Race to the destination as fast as you can</div>
+                        </div>
+                        <div class="mode-check">✓</div>
+                    </div>
+                    <div class="mode-card" data-mode="checkpoint">
+                        <div class="mode-icon">🏁</div>
+                        <div class="mode-text">
+                            <div class="mode-name">Checkpoints</div>
+                            <div class="mode-desc">Collect all markers scattered across the map</div>
+                        </div>
+                        <div class="mode-check">✓</div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Controls Tab -->
+            <div class="tab-content" id="tab-controls">
+                <div class="controls-grid">
+                    <div class="controls-section-title">Driving</div>
+                    <div class="control-row">
+                        <div class="control-keys"><span class="control-key">W</span><span class="control-key">↑</span></div>
+                        <span class="control-action">Accelerate</span>
+                    </div>
+                    <div class="control-row">
+                        <div class="control-keys"><span class="control-key">S</span><span class="control-key">↓</span></div>
+                        <span class="control-action">Brake / Reverse</span>
+                    </div>
+                    <div class="control-row">
+                        <div class="control-keys"><span class="control-key">A</span><span class="control-key">←</span></div>
+                        <span class="control-action">Turn Left</span>
+                    </div>
+                    <div class="control-row">
+                        <div class="control-keys"><span class="control-key">D</span><span class="control-key">→</span></div>
+                        <span class="control-action">Turn Right</span>
+                    </div>
+                    <div class="control-row">
+                        <div class="control-keys"><span class="control-key">Space</span></div>
+                        <span class="control-action">Handbrake</span>
+                    </div>
+                    <div class="control-row">
+                        <div class="control-keys"><span class="control-key">Ctrl</span></div>
+                        <span class="control-action">Boost</span>
+                    </div>
+                    
+                    <div class="controls-section-title">Camera</div>
+                    <div class="control-row">
+                        <div class="control-keys"><span class="control-key">Drag</span></div>
+                        <span class="control-action">Pan View</span>
+                    </div>
+                    <div class="control-row">
+                        <div class="control-keys"><span class="control-key">Scroll</span></div>
+                        <span class="control-action">Zoom</span>
+                    </div>
+                    <div class="control-row">
+                        <div class="control-keys"><span class="control-key">R</span></div>
+                        <span class="control-action">Reset Zoom</span>
+                    </div>
+                    <div class="control-row">
+                        <div class="control-keys"><span class="control-key">Esc</span></div>
+                        <span class="control-action">Pause</span>
+                    </div>
+                    
+                    <div class="controls-section-title">Special</div>
+                    <div class="control-row">
+                        <div class="control-keys"><span class="control-key">Shift</span></div>
+                        <span class="control-action">Off-Road Mode</span>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Start Button -->
+            <div class="start-section">
+                <button class="start-btn" id="startBtn">Start Game</button>
+            </div>
+        </div>
+        
+        <div class="title-footer">
+            <div class="version">v1.4 • Map data © OpenStreetMap contributors</div>
+        </div>
+    </div>
+    
+    <!-- PAUSE MENU -->
+    <div id="pauseMenu">
+        <div class="pause-panel">
+            <div class="pause-title">PAUSED</div>
+            <button class="pause-btn" id="resumeBtn">Resume</button>
+            <button class="pause-btn" id="restartBtn">Restart</button>
+            <button class="pause-btn" id="mainMenuBtn">Main Menu</button>
+        </div>
+    </div>
+    
+    <!-- RESULTS SCREEN -->
+    <div id="resultsScreen">
+        <div class="results-panel">
+            <div class="results-title" id="resultsTitle">TIME TRIAL COMPLETE</div>
+            <div class="results-time" id="resultsTime">00:00.00</div>
+            <div class="results-label" id="resultsLabel">Total Time</div>
+            <div>
+                <button class="results-btn" id="playAgainBtn">Play Again</button>
+                <button class="results-btn secondary" id="resultsMenuBtn">Main Menu</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- LOADING OVERLAY -->
+    <div id="loadingOverlay">
+        <div class="loading-spinner"></div>
+        <div class="loading-text" id="loadingText">Loading map...</div>
+    </div>
+    
+    <!-- GAME MODE HUD -->
+    <div id="modeHud">
+        <div class="mode-timer" id="modeTimer">00:00.00</div>
+        <div class="mode-info" id="modeInfo">Free Roam</div>
+    </div>
+    
+    <!-- GAME CANVAS & HUD -->
+    <canvas id="gameCanvas"></canvas>
+    <canvas id="minimap" width="180" height="180"></canvas>
+    
+    <!-- Direction indicators (arrows pointing to objectives) -->
+    <div id="directionIndicators"></div>
+    
+    <div id="hud">
+        <div class="hud-panel speed-display">
+            <div class="speed-value" id="speedValue">0</div>
+            <div class="speed-label">MPH</div>
+            <div class="speed-limit">LIMIT <span class="speed-limit-value" id="speedLimitValue">--</span></div>
+        </div>
+        <div class="hud-panel info-panel">
+            <div class="street-name" id="streetName">Loading...</div>
+            <div class="info-row"><span class="info-label">Location</span><span class="info-value" id="locationValue">Baltimore, MD</span></div>
+            <div class="info-row"><span class="info-label">Coords</span><span class="info-value" id="coordsValue">--</span></div>
+            <div class="info-row"><span class="info-label">Heading</span><span class="info-value" id="headingValue">N</span></div>
+            <div class="status-row">
+                <div class="status-indicator"><div class="status-dot" id="brakingDot"></div><span>BRAKE</span></div>
+                <div class="status-indicator"><div class="status-dot" id="boostDot"></div><span>BOOST</span></div>
+                <div class="status-indicator"><div class="status-dot" id="offRoadModeDot"></div><span>OFF-ROAD</span></div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="btn-stack">
+        <button class="game-btn home-btn" id="homeBtn">🏠 Home</button>
+        <button class="game-btn location" id="locationBtn">📍 Hollywood</button>
+        <button class="game-btn map" id="mapToggleBtn">🗺️ Street View</button>
+        <button class="game-btn police" id="policeBtn">🚔 Police Chase</button>
+        <button class="game-btn" id="respawnBtn">🔄 Respawn</button>
+        <button class="game-btn" id="reloadBtn">⟳ Reload Roads</button>
+    </div>
+    
+    <!-- Controls Tab (expandable during gameplay) -->
+    <div id="controlsTab">
+        <div class="controls-tab-header" id="controlsTabHeader">
+            <span class="tab-icon">🎹</span>
+            <span class="tab-label">Controls</span>
+            <span class="tab-arrow">▼</span>
+        </div>
+        <div class="controls-tab-content">
+            <div class="controls-tab-section">
+                <div class="controls-tab-section-title">Driving</div>
+                <div class="controls-tab-row">
+                    <div class="controls-tab-keys"><span class="controls-tab-key">W</span><span class="controls-tab-key">↑</span></div>
+                    <span class="controls-tab-action">Accelerate</span>
+                </div>
+                <div class="controls-tab-row">
+                    <div class="controls-tab-keys"><span class="controls-tab-key">S</span><span class="controls-tab-key">↓</span></div>
+                    <span class="controls-tab-action">Brake / Reverse</span>
+                </div>
+                <div class="controls-tab-row">
+                    <div class="controls-tab-keys"><span class="controls-tab-key">A</span><span class="controls-tab-key">←</span></div>
+                    <span class="controls-tab-action">Turn Left</span>
+                </div>
+                <div class="controls-tab-row">
+                    <div class="controls-tab-keys"><span class="controls-tab-key">D</span><span class="controls-tab-key">→</span></div>
+                    <span class="controls-tab-action">Turn Right</span>
+                </div>
+                <div class="controls-tab-row">
+                    <div class="controls-tab-keys"><span class="controls-tab-key">Space</span></div>
+                    <span class="controls-tab-action">Handbrake</span>
+                </div>
+                <div class="controls-tab-row">
+                    <div class="controls-tab-keys"><span class="controls-tab-key">Ctrl</span></div>
+                    <span class="controls-tab-action">Boost</span>
+                </div>
+            </div>
+            <div class="controls-tab-section">
+                <div class="controls-tab-section-title">Camera</div>
+                <div class="controls-tab-row">
+                    <div class="controls-tab-keys"><span class="controls-tab-key">Drag</span></div>
+                    <span class="controls-tab-action">Pan View</span>
+                </div>
+                <div class="controls-tab-row">
+                    <div class="controls-tab-keys"><span class="controls-tab-key">Scroll</span></div>
+                    <span class="controls-tab-action">Zoom</span>
+                </div>
+                <div class="controls-tab-row">
+                    <div class="controls-tab-keys"><span class="controls-tab-key">R</span></div>
+                    <span class="controls-tab-action">Reset Zoom</span>
+                </div>
+                <div class="controls-tab-row">
+                    <div class="controls-tab-keys"><span class="controls-tab-key">Esc</span></div>
+                    <span class="controls-tab-action">Pause Menu</span>
+                </div>
+            </div>
+            <div class="controls-tab-section">
+                <div class="controls-tab-section-title">Special</div>
+                <div class="controls-tab-row">
+                    <div class="controls-tab-keys"><span class="controls-tab-key">Shift</span></div>
+                    <span class="controls-tab-action">Off-Road Mode</span>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="attribution">Map data © <a href="https://www.openstreetmap.org/copyright" target="_blank">OpenStreetMap</a> contributors</div>
+
+    <script>
+    // ============== LOCATIONS ==============
+    const LOCATIONS = {
+        baltimore: { name: 'Baltimore, MD', lat: 39.2904, lon: -76.6122 },
+        hollywood: { name: 'Hollywood, CA', lat: 34.1016, lon: -118.3267 }
+    };
+
+    // ============== CONFIG ==============
+    const CONFIG = {
+        startLat: 39.2904, startLon: -76.6122, loadRadius: 0.035,
+        currentLocation: 'baltimore',
+        maxSpeed: 240, acceleration: 50, boostAcceleration: 200, brakeForce: 300, friction: 45, turnSpeed: 3.8,
+        offRoadFriction: 250, offRoadMaxSpeed: 40,
+        baseCameraZoom: 1.5, minCameraZoom: 0.1, maxCameraZoom: 8, speedZoomFactor: 0.002, lookAheadFactor: 0.3,
+        roadColor: '#2a5a6a', roadGlow: '#00ffcc', carColor: '#ff3366', backgroundColor: '#0a1215',
+        skidMarkColor: 'rgba(30, 30, 30, 0.8)', maxSkidMarks: 300, // Reduced from 500
+        policeSpeed: 180, policeAccel: 80, policeTurnSpeed: 4.0, policeChaseDistance: 800,
+        tileSize: 256, tileZoom: 18,
+        satelliteServer: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile',
+        streetServer: 'https://tile.openstreetmap.org',
+        tilePreloadRadius: 2, // Reduced from 3
+        checkpointRadius: 25,
+        timeTrialDuration: 120 // seconds
+    };
+
+    // ============== GAME STATE ==============
+    const state = {
+        car: { x: 0, y: 0, angle: 0, speed: 0, width: 12, height: 6, isOnRoad: true, wasOnRoad: true, currentRoad: null, isBraking: false, isSkidding: false, isOffRoadMode: false, isBoosting: false },
+        camera: { x: 0, y: 0, zoom: 1.5, targetZoom: 1.5, lookAheadX: 0, lookAheadY: 0, manualZoom: false },
+        roads: [], bounds: null, skidMarks: [], tiles: {}, keys: {}, lastTime: 0,
+        policeEnabled: false, police: [],
+        mapType: 'satellite',
+        isLoading: false,
+        // Game mode state
+        gameMode: 'freeRoam', // 'freeRoam', 'timeTrial', 'checkpoint'
+        gameStarted: false,
+        gamePaused: false,
+        gameTimer: 0,
+        checkpoints: [],
+        checkpointsCollected: 0,
+        totalCheckpoints: 8,
+        // Time trial destination
+        timeTrialDestination: null,
+        timeTrialComplete: false
+    };
+
+    // ============== DOM ELEMENTS ==============
+    const canvas = document.getElementById('gameCanvas');
+    const ctx = canvas.getContext('2d');
+    const minimapCanvas = document.getElementById('minimap');
+    const minimapCtx = minimapCanvas.getContext('2d');
+
+    // ============== COORDINATE FUNCTIONS ==============
+    const SCALE = 100000;
+    function geoToGame(lat, lon) { return { x: (lon - CONFIG.startLon) * SCALE * Math.cos(CONFIG.startLat * Math.PI / 180), y: -(lat - CONFIG.startLat) * SCALE }; }
+    function gameToGeo(x, y) { return { lat: CONFIG.startLat - (y / SCALE), lon: CONFIG.startLon + (x / (SCALE * Math.cos(CONFIG.startLat * Math.PI / 180))) }; }
+    function geoToTile(lat, lon, zoom) { const n = Math.pow(2, zoom); const x = Math.floor((lon + 180) / 360 * n); const latRad = lat * Math.PI / 180; const y = Math.floor((1 - Math.log(Math.tan(latRad) + 1 / Math.cos(latRad)) / Math.PI) / 2 * n); return { x, y, z: zoom }; }
+    function tileToGeo(x, y, zoom) { const n = Math.pow(2, zoom); const lon = x / n * 360 - 180; const latRad = Math.atan(Math.sinh(Math.PI * (1 - 2 * y / n))); return { lat: latRad * 180 / Math.PI, lon }; }
+
+    // ============== TILE LOADING ==============
+    let tilesLoading = 0;
+    const MAX_CONCURRENT_TILES = 6; // Limit concurrent tile requests
+    
+    function getTileKey(x, y, z) { return `${state.mapType}/${z}/${x}/${y}`; }
+    
+    function loadTile(x, y, z) {
+        const key = getTileKey(x, y, z);
+        if (state.tiles[key]) return;
+        if (tilesLoading >= MAX_CONCURRENT_TILES) return; // Don't overload
+        
+        state.tiles[key] = { loading: true, img: null };
+        tilesLoading++;
+        
+        const img = new Image();
+        img.crossOrigin = 'anonymous';
+        img.onload = () => { 
+            state.tiles[key] = { loading: false, img: img }; 
+            tilesLoading--;
+        };
+        img.onerror = () => { 
+            state.tiles[key] = { loading: false, img: null, error: true }; 
+            tilesLoading--;
+        };
+        if (state.mapType === 'satellite') {
+            img.src = `${CONFIG.satelliteServer}/${z}/${y}/${x}`;
+        } else {
+            img.src = `${CONFIG.streetServer}/${z}/${x}/${y}.png`;
+        }
+    }
+
+    function getVisibleTiles() {
+        const { width, height } = canvas; const cam = state.camera;
+        const viewWidth = width / cam.zoom; const viewHeight = height / cam.zoom;
+        const topLeft = gameToGeo(cam.x - viewWidth/2, cam.y - viewHeight/2);
+        const bottomRight = gameToGeo(cam.x + viewWidth/2, cam.y + viewHeight/2);
+        const zoom = CONFIG.tileZoom;
+        const minTile = geoToTile(topLeft.lat, topLeft.lon, zoom);
+        const maxTile = geoToTile(bottomRight.lat, bottomRight.lon, zoom);
+        const tiles = [];
+        const preload = CONFIG.tilePreloadRadius;
+        const maxTileIndex = Math.pow(2, zoom) - 1;
+        
+        // Calculate center tile for priority sorting
+        const centerTileX = (minTile.x + maxTile.x) / 2;
+        const centerTileY = (minTile.y + maxTile.y) / 2;
+        
+        for (let tx = minTile.x - preload; tx <= maxTile.x + preload; tx++) {
+            for (let ty = minTile.y - preload; ty <= maxTile.y + preload; ty++) {
+                if (tx >= 0 && tx <= maxTileIndex && ty >= 0 && ty <= maxTileIndex) {
+                    // Calculate distance from center for priority
+                    const dist = Math.abs(tx - centerTileX) + Math.abs(ty - centerTileY);
+                    tiles.push({ x: tx, y: ty, z: zoom, priority: dist });
+                }
+            }
+        }
+        
+        // Sort by priority (center tiles first)
+        tiles.sort((a, b) => a.priority - b.priority);
+        return tiles;
+    }
+
+    function drawMapTiles() {
+        const visibleTiles = getVisibleTiles();
+        visibleTiles.forEach(({ x, y, z }) => {
+            loadTile(x, y, z);
+            const key = getTileKey(x, y, z);
+            const tile = state.tiles[key];
+            if (tile && tile.img && !tile.loading) {
+                const topLeftGeo = tileToGeo(x, y, z);
+                const bottomRightGeo = tileToGeo(x + 1, y + 1, z);
+                const topLeftGame = geoToGame(topLeftGeo.lat, topLeftGeo.lon);
+                const bottomRightGame = geoToGame(bottomRightGeo.lat, bottomRightGeo.lon);
+                ctx.globalAlpha = state.mapType === 'satellite' ? 0.9 : 0.7;
+                ctx.drawImage(tile.img, topLeftGame.x, topLeftGame.y, bottomRightGame.x - topLeftGame.x, bottomRightGame.y - topLeftGame.y);
+                ctx.globalAlpha = 1;
+            }
+        });
+    }
+
+    function calculateBounds() {
+        if (state.roads.length === 0) return;
+        let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
+        state.roads.forEach(road => { road.points.forEach(p => { minX = Math.min(minX, p.x); maxX = Math.max(maxX, p.x); minY = Math.min(minY, p.y); maxY = Math.max(maxY, p.y); }); });
+        state.bounds = { minX, maxX, minY, maxY };
+    }
+
+    async function loadRoads() {
+        state.tiles = {};
+        state.isLoading = true;
+        document.getElementById('loadingOverlay').classList.add('visible');
+        document.getElementById('loadingText').textContent = 'Loading ' + LOCATIONS[CONFIG.currentLocation].name + '...';
+        
+        // Start car at map center while loading
+        state.car.x = 0;
+        state.car.y = 0;
+        state.car.speed = 0;
+        state.camera.x = 0;
+        state.camera.y = 0;
+        
+        const minLat = CONFIG.startLat - CONFIG.loadRadius;
+        const maxLat = CONFIG.startLat + CONFIG.loadRadius;
+        const minLon = CONFIG.startLon - CONFIG.loadRadius;
+        const maxLon = CONFIG.startLon + CONFIG.loadRadius;
+        
+        const query = `[out:json][timeout:30];(way["highway"~"^(motorway|motorway_link|trunk|trunk_link|primary|primary_link|secondary|secondary_link|tertiary|tertiary_link|residential|unclassified|living_street)$"](${minLat},${minLon},${maxLat},${maxLon}););out body;>;out skel qt;`;
+        
+        try {
+            const res = await fetch('https://overpass-api.de/api/interpreter', { method: 'POST', body: 'data=' + encodeURIComponent(query) });
+            if (!res.ok) throw new Error('API request failed');
+            const data = await res.json();
+            
+            // Process nodes
+            const nodes = {};
+            data.elements.forEach(el => { if (el.type === 'node') nodes[el.id] = { lat: el.lat, lon: el.lon }; });
+            
+            // Process ways
+            state.roads = [];
+            data.elements.forEach(el => {
+                if (el.type === 'way' && el.nodes) {
+                    const points = el.nodes.map(nodeId => nodes[nodeId]).filter(n => n).map(n => geoToGame(n.lat, n.lon));
+                    if (points.length >= 2) {
+                        const highway = el.tags?.highway || 'residential';
+                        let width = 8, defaultSpeed = 25;
+                        if (highway.includes('motorway')) { width = 18; defaultSpeed = 65; }
+                        else if (highway.includes('trunk')) { width = 16; defaultSpeed = 55; }
+                        else if (highway.includes('primary')) { width = 14; defaultSpeed = 40; }
+                        else if (highway.includes('secondary')) { width = 12; defaultSpeed = 35; }
+                        else if (highway.includes('tertiary')) { width = 10; defaultSpeed = 30; }
+                        const name = el.tags?.name || `${highway.charAt(0).toUpperCase() + highway.slice(1).replace('_', ' ')}`;
+                        const speedLimit = el.tags?.maxspeed ? parseInt(el.tags.maxspeed) : defaultSpeed;
+                        state.roads.push({ points, width, type: highway, name, speedLimit });
+                    }
+                }
+            });
+            
+            if (state.roads.length > 0) {
+                calculateBounds();
+                console.log(`Loaded ${state.roads.length} roads from OpenStreetMap`);
+            } else {
+                console.log('No roads found, retrying...');
+                document.getElementById('loadingText').textContent = 'No roads found. Retrying...';
+            }
+        } catch (e) {
+            console.log('Error loading roads:', e);
+            document.getElementById('loadingText').textContent = 'Error loading map. Retrying...';
+            // Retry after delay
+            setTimeout(() => loadRoads(), 2000);
+            return;
+        }
+        
+        state.isLoading = false;
+        document.getElementById('loadingOverlay').classList.remove('visible');
+        
+        respawnCar();
+        if (state.gameMode === 'checkpoint') generateCheckpoints();
+        if (state.gameMode === 'timeTrial') generateTimeTrialDestination();
+    }
+
+    // ============== CAR & PHYSICS ==============
+    function respawnCar() {
+        if (state.roads.length > 0 && state.roads[0].points.length > 0) {
+            const startRoad = state.roads[0];
+            state.car.x = startRoad.points[0].x;
+            state.car.y = startRoad.points[0].y;
+            if (startRoad.points.length > 1) {
+                state.car.angle = Math.atan2(startRoad.points[1].y - startRoad.points[0].y, startRoad.points[1].x - startRoad.points[0].x);
+            }
+            state.car.speed = 0;
+            state.camera.x = state.car.x;
+            state.camera.y = state.car.y;
+        }
+    }
+
+    function nearestPointOnSegment(px, py, x1, y1, x2, y2) {
+        const dx = x2 - x1, dy = y2 - y1, lengthSquared = dx * dx + dy * dy;
+        if (lengthSquared === 0) return { point: { x: x1, y: y1 }, distance: Math.sqrt((px - x1) ** 2 + (py - y1) ** 2) };
+        let t = ((px - x1) * dx + (py - y1) * dy) / lengthSquared;
+        t = Math.max(0, Math.min(1, t));
+        const nearestX = x1 + t * dx, nearestY = y1 + t * dy;
+        return { point: { x: nearestX, y: nearestY }, distance: Math.sqrt((px - nearestX) ** 2 + (py - nearestY) ** 2), t };
+    }
+
+    function getRoadDirection(road, carX, carY) {
+        if (!road || road.points.length < 2) return null;
+        let nearestDist = Infinity, nearestSegment = 0;
+        for (let i = 0; i < road.points.length - 1; i++) {
+            const p1 = road.points[i], p2 = road.points[i + 1];
+            const result = nearestPointOnSegment(carX, carY, p1.x, p1.y, p2.x, p2.y);
+            if (result.distance < nearestDist) { nearestDist = result.distance; nearestSegment = i; }
+        }
+        const p1 = road.points[nearestSegment], p2 = road.points[nearestSegment + 1];
+        return Math.atan2(p2.y - p1.y, p2.x - p1.x);
+    }
+
+    function findNearestRoad(x, y) {
+        let nearestRoad = null, nearestDistance = Infinity, nearestPoint = null;
+        state.roads.forEach(road => {
+            for (let i = 0; i < road.points.length - 1; i++) {
+                const p1 = road.points[i], p2 = road.points[i + 1];
+                const result = nearestPointOnSegment(x, y, p1.x, p1.y, p2.x, p2.y);
+                if (result.distance < nearestDistance) { nearestDistance = result.distance; nearestRoad = road; nearestPoint = result.point; }
+            }
+        });
+        return { road: nearestRoad, distance: nearestDistance, point: nearestPoint };
+    }
+
+    // ============== CHECKPOINTS ==============
+    function generateCheckpoints() {
+        state.checkpoints = [];
+        state.checkpointsCollected = 0;
+        
+        // Place checkpoints at random road intersections/points
+        const allPoints = [];
+        state.roads.forEach(road => {
+            road.points.forEach((p, i) => {
+                if (i % 2 === 0) allPoints.push({ x: p.x, y: p.y }); // Every other point
+            });
+        });
+        
+        // Shuffle and pick N checkpoints
+        for (let i = allPoints.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [allPoints[i], allPoints[j]] = [allPoints[j], allPoints[i]];
+        }
+        
+        state.checkpoints = allPoints.slice(0, state.totalCheckpoints).map((p, i) => ({
+            x: p.x, y: p.y, collected: false, index: i + 1
+        }));
+    }
+
+    function checkCheckpointCollision() {
+        const car = state.car;
+        state.checkpoints.forEach(cp => {
+            if (cp.collected) return;
+            const dist = Math.sqrt((car.x - cp.x) ** 2 + (car.y - cp.y) ** 2);
+            if (dist < CONFIG.checkpointRadius) {
+                cp.collected = true;
+                state.checkpointsCollected++;
+                
+                // Check if all collected
+                if (state.checkpointsCollected >= state.totalCheckpoints) {
+                    endGame();
+                }
+            }
+        });
+    }
+
+    // ============== TIME TRIAL DESTINATION ==============
+    function generateTimeTrialDestination() {
+        state.timeTrialDestination = null;
+        state.timeTrialComplete = false;
+        
+        if (!state.bounds || state.roads.length === 0) return;
+        
+        // Find a point on the opposite side of the map from spawn
+        const car = state.car;
+        let farthestPoint = null;
+        let farthestDist = 0;
+        
+        // Search through all road points for the farthest one
+        state.roads.forEach(road => {
+            road.points.forEach(p => {
+                const dist = Math.sqrt((p.x - car.x) ** 2 + (p.y - car.y) ** 2);
+                if (dist > farthestDist) {
+                    farthestDist = dist;
+                    farthestPoint = { x: p.x, y: p.y };
+                }
+            });
+        });
+        
+        if (farthestPoint) {
+            state.timeTrialDestination = farthestPoint;
+            console.log('Time trial destination set at distance:', farthestDist);
+        }
+    }
+
+    function checkTimeTrialDestination() {
+        if (!state.timeTrialDestination || state.timeTrialComplete) return;
+        
+        const car = state.car;
+        const dest = state.timeTrialDestination;
+        const dist = Math.sqrt((car.x - dest.x) ** 2 + (car.y - dest.y) ** 2);
+        
+        if (dist < CONFIG.checkpointRadius * 1.5) {
+            // Reached destination! Stop timer but don't end game
+            state.timeTrialComplete = true;
+        }
+    }
+
+    // ============== POLICE ==============
+    function spawnPolice() {
+        state.police = [];
+        const car = state.car;
+        for (let i = 0; i < 2; i++) {
+            const spawnDistance = 300 + i * 200;
+            const spawnAngle = car.angle + Math.PI + (i === 0 ? 0.5 : -0.5);
+            let spawnX = car.x + Math.cos(spawnAngle) * spawnDistance;
+            let spawnY = car.y + Math.sin(spawnAngle) * spawnDistance;
+            const nearestRoad = findNearestRoad(spawnX, spawnY);
+            if (nearestRoad.point) { spawnX = nearestRoad.point.x; spawnY = nearestRoad.point.y; }
+            state.police.push({ x: spawnX, y: spawnY, angle: car.angle, speed: 0, width: 14, height: 7, sirenPhase: i * Math.PI, isChasing: false });
+        }
+    }
+
+    function updatePolice(dt) {
+        if (!state.policeEnabled || state.police.length === 0) return;
+        const car = state.car;
+        const mph = Math.abs(car.speed * 0.5);
+        const speedLimit = car.currentRoad?.speedLimit || 25;
+        const isSpeeding = mph > speedLimit;
+        
+        state.police.forEach(cop => {
+            cop.sirenPhase += dt * 10;
+            const dx = car.x - cop.x, dy = car.y - cop.y;
+            const distToPlayer = Math.sqrt(dx * dx + dy * dy);
+            
+            if (isSpeeding && distToPlayer < CONFIG.policeChaseDistance) cop.isChasing = true;
+            if (!isSpeeding && distToPlayer < 100) cop.isChasing = false;
+            
+            if (cop.isChasing) {
+                const targetAngle = Math.atan2(dy, dx);
+                let angleDiff = targetAngle - cop.angle;
+                while (angleDiff > Math.PI) angleDiff -= Math.PI * 2;
+                while (angleDiff < -Math.PI) angleDiff += Math.PI * 2;
+                cop.angle += angleDiff * CONFIG.policeTurnSpeed * dt;
+                if (distToPlayer > 50) cop.speed += CONFIG.policeAccel * dt;
+                else cop.speed *= 0.95;
+                cop.speed = Math.min(cop.speed, CONFIG.policeSpeed);
+            } else {
+                cop.speed *= 0.98;
+                if (cop.speed < 1) cop.speed = 0;
+            }
+            
+            const newX = cop.x + Math.cos(cop.angle) * cop.speed * dt;
+            const newY = cop.y + Math.sin(cop.angle) * cop.speed * dt;
+            const nearestRoad = findNearestRoad(newX, newY);
+            if (nearestRoad.distance < 50 || cop.isChasing) { cop.x = newX; cop.y = newY; }
+            else if (nearestRoad.point) { cop.x = nearestRoad.point.x; cop.y = nearestRoad.point.y; }
+            
+            if (distToPlayer < 20 && cop.isChasing) { car.speed *= 0.3; cop.speed = 0; }
+        });
+    }
+
+    // ============== GAME FLOW ==============
+    function startGame() {
+        document.getElementById('titleScreen').classList.add('hidden');
+        document.getElementById('controlsTab').classList.add('visible');
+        state.gameStarted = true;
+        state.gamePaused = false;
+        state.gameTimer = 0;
+        state.timeTrialComplete = false;
+        state.timeTrialDestination = null;
+        
+        // Set location
+        const loc = LOCATIONS[CONFIG.currentLocation];
+        CONFIG.startLat = loc.lat;
+        CONFIG.startLon = loc.lon;
+        document.getElementById('locationValue').textContent = loc.name;
+        document.getElementById('locationBtn').textContent = '📍 ' + (CONFIG.currentLocation === 'baltimore' ? 'Hollywood' : 'Baltimore');
+        
+        // Setup mode
+        if (state.gameMode === 'checkpoint') {
+            document.getElementById('modeHud').classList.add('visible');
+            document.getElementById('modeInfo').textContent = `Checkpoints: 0/${state.totalCheckpoints}`;
+        } else if (state.gameMode === 'timeTrial') {
+            document.getElementById('modeHud').classList.add('visible');
+            document.getElementById('modeInfo').textContent = 'Race to the destination!';
+        } else {
+            document.getElementById('modeHud').classList.remove('visible');
+        }
+        
+        loadRoads();
+        state.lastTime = performance.now();
+        requestAnimationFrame(gameLoop);
+    }
+
+    function pauseGame() {
+        if (!state.gameStarted) return;
+        state.gamePaused = true;
+        document.getElementById('pauseMenu').classList.add('visible');
+    }
+
+    function resumeGame() {
+        state.gamePaused = false;
+        document.getElementById('pauseMenu').classList.remove('visible');
+        state.lastTime = performance.now();
+        requestAnimationFrame(gameLoop);
+    }
+
+    function restartGame() {
+        document.getElementById('pauseMenu').classList.remove('visible');
+        document.getElementById('resultsScreen').classList.remove('visible');
+        state.gamePaused = false;
+        state.gameTimer = 0;
+        state.checkpointsCollected = 0;
+        state.timeTrialComplete = false;
+        state.timeTrialDestination = null;
+        state.police = [];
+        state.policeEnabled = false;
+        document.getElementById('policeBtn').classList.remove('active');
+        
+        if (state.gameMode === 'checkpoint') generateCheckpoints();
+        if (state.gameMode === 'timeTrial') generateTimeTrialDestination();
+        respawnCar();
+        
+        state.lastTime = performance.now();
+        requestAnimationFrame(gameLoop);
+    }
+
+    function endGame() {
+        state.gamePaused = true;
+        
+        if (state.gameMode === 'checkpoint') {
+            document.getElementById('resultsTitle').textContent = 'CHECKPOINTS COMPLETE!';
+            document.getElementById('resultsTime').textContent = formatTime(state.gameTimer);
+            document.getElementById('resultsLabel').textContent = 'Total Time';
+        }
+        
+        document.getElementById('resultsScreen').classList.add('visible');
+    }
+
+    function goToMainMenu() {
+        document.getElementById('pauseMenu').classList.remove('visible');
+        document.getElementById('resultsScreen').classList.remove('visible');
+        document.getElementById('modeHud').classList.remove('visible');
+        document.getElementById('controlsTab').classList.remove('visible');
+        document.getElementById('controlsTab').classList.remove('expanded');
+        document.getElementById('titleScreen').classList.remove('hidden');
+        state.gameStarted = false;
+        state.gamePaused = false;
+    }
+
+    function formatTime(seconds) {
+        const mins = Math.floor(seconds / 60);
+        const secs = Math.floor(seconds % 60);
+        const ms = Math.floor((seconds % 1) * 100);
+        return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}.${ms.toString().padStart(2, '0')}`;
+    }
+
+    // ============== UPDATE ==============
+    function update(dt) {
+        if (state.gamePaused) return;
+        
+        const car = state.car, keys = state.keys;
+        car.isOffRoadMode = keys['ShiftLeft'] || keys['ShiftRight'];
+        car.isBoosting = keys['ControlLeft'] || keys['ControlRight'];
+
+        const { road: nearestRoad, distance: nearestDistance, point: nearestPoint } = findNearestRoad(car.x, car.y);
+        const effectiveRadius = nearestRoad ? nearestRoad.width / 2 + 12 : 25;
+        
+        if (car.wasOnRoad && nearestDistance > effectiveRadius + 8) car.isOnRoad = false;
+        else if (!car.wasOnRoad && nearestDistance < effectiveRadius) car.isOnRoad = true;
+        car.wasOnRoad = car.isOnRoad;
+        car.currentRoad = nearestRoad;
+
+        const currentMaxSpeed = car.isOnRoad ? CONFIG.maxSpeed : CONFIG.offRoadMaxSpeed;
+        const currentFriction = car.isOnRoad ? CONFIG.friction : CONFIG.offRoadFriction;
+        const currentAccel = car.isBoosting ? CONFIG.boostAcceleration : CONFIG.acceleration;
+
+        car.isBraking = keys['Space'] || keys['KeyS'] || keys['ArrowDown'];
+        if (keys['KeyW'] || keys['ArrowUp']) car.speed += currentAccel * dt;
+        if (car.isBraking) car.speed -= CONFIG.brakeForce * dt;
+
+        const turnAmount = CONFIG.turnSpeed * dt;
+        const turnDir = car.speed >= 0 ? 1 : -1;
+        const speedFactor = 1 - (Math.abs(car.speed) / CONFIG.maxSpeed) * 0.2;
+        const isTurningLeft = keys['KeyA'] || keys['ArrowLeft'];
+        const isTurningRight = keys['KeyD'] || keys['ArrowRight'];
+        if (isTurningLeft) car.angle -= turnAmount * turnDir * speedFactor;
+        if (isTurningRight) car.angle += turnAmount * turnDir * speedFactor;
+
+        // Auto-straighten
+        if (!isTurningLeft && !isTurningRight && Math.abs(car.speed) > 10 && nearestRoad && car.isOnRoad) {
+            const roadDir = getRoadDirection(nearestRoad, car.x, car.y);
+            if (roadDir !== null) {
+                let angleDiff = roadDir - car.angle;
+                while (angleDiff > Math.PI) angleDiff -= Math.PI * 2;
+                while (angleDiff < -Math.PI) angleDiff += Math.PI * 2;
+                if (Math.abs(angleDiff) > Math.PI / 2) angleDiff = angleDiff > 0 ? angleDiff - Math.PI : angleDiff + Math.PI;
+                car.angle += angleDiff * 0.03 * Math.min(1, Math.abs(car.speed) / 50);
+            }
+        }
+
+        if (!keys['KeyW'] && !keys['ArrowUp'] && !keys['KeyS'] && !keys['ArrowDown'] && !car.isBraking) {
+            car.speed = car.speed > 0 ? Math.max(0, car.speed - currentFriction * dt) : Math.min(0, car.speed + currentFriction * dt);
+        }
+        car.speed = Math.max(-currentMaxSpeed * 0.3, Math.min(currentMaxSpeed, car.speed));
+
+        // Skid marks
+        car.isSkidding = (car.isBraking && Math.abs(car.speed) > 30) || ((isTurningLeft || isTurningRight) && Math.abs(car.speed) > 60);
+        if (car.isSkidding && state.skidMarks.length < CONFIG.maxSkidMarks) {
+            const rearOffset = car.width * 0.4, sideOffset = car.height * 0.35;
+            const cos = Math.cos(car.angle), sin = Math.sin(car.angle);
+            state.skidMarks.push({ x: car.x - cos * rearOffset - sin * sideOffset, y: car.y - sin * rearOffset + cos * sideOffset, age: 0 });
+            state.skidMarks.push({ x: car.x - cos * rearOffset + sin * sideOffset, y: car.y - sin * rearOffset - cos * sideOffset, age: 0 });
+        }
+
+        // Movement with road constraint
+        let newX = car.x + Math.cos(car.angle) * car.speed * dt;
+        let newY = car.y + Math.sin(car.angle) * car.speed * dt;
+        
+        if (!car.isOffRoadMode && state.roads.length > 0) {
+            const newResult = findNearestRoad(newX, newY);
+            const newEffectiveRadius = newResult.road ? newResult.road.width / 2 + 12 : 25;
+            if (newResult.distance > newEffectiveRadius && newResult.point) {
+                car.speed *= 0.5; // Crash penalty
+                const pushDir = Math.atan2(car.y - newResult.point.y, car.x - newResult.point.x);
+                newX = newResult.point.x + Math.cos(pushDir) * (newEffectiveRadius - 2);
+                newY = newResult.point.y + Math.sin(pushDir) * (newEffectiveRadius - 2);
+            }
+        }
+        
+        car.x = newX;
+        car.y = newY;
+
+        // Camera
+        const lookAheadX = Math.cos(car.angle) * Math.abs(car.speed) * CONFIG.lookAheadFactor;
+        const lookAheadY = Math.sin(car.angle) * Math.abs(car.speed) * CONFIG.lookAheadFactor;
+        state.camera.lookAheadX += (lookAheadX - state.camera.lookAheadX) * 0.05;
+        state.camera.lookAheadY += (lookAheadY - state.camera.lookAheadY) * 0.05;
+        state.camera.x += (car.x + state.camera.lookAheadX - state.camera.x) * 0.08;
+        state.camera.y += (car.y + state.camera.lookAheadY - state.camera.y) * 0.08;
+        if (!state.camera.manualZoom) {
+            state.camera.targetZoom = Math.max(CONFIG.minCameraZoom, Math.min(CONFIG.maxCameraZoom, CONFIG.baseCameraZoom - Math.abs(car.speed) * CONFIG.speedZoomFactor));
+        }
+        state.camera.zoom += (state.camera.targetZoom - state.camera.zoom) * 0.08;
+
+        // Update game timer
+        if (state.gameMode === 'timeTrial') {
+            // Timer counts UP until destination reached
+            if (!state.timeTrialComplete) {
+                state.gameTimer += dt;
+                checkTimeTrialDestination();
+            }
+        } else if (state.gameMode === 'checkpoint') {
+            state.gameTimer += dt;
+            checkCheckpointCollision();
+        }
+
+        updatePolice(dt);
+        updateHUD();
+    }
+
+    function updateHUD() {
+        const car = state.car;
+        const mph = Math.abs(Math.round(car.speed * 0.5));
+        const speedEl = document.getElementById('speedValue');
+        speedEl.textContent = mph;
+        const speedLimit = car.currentRoad?.speedLimit || 25;
+        speedEl.classList.toggle('speeding', mph > speedLimit);
+        document.getElementById('speedLimitValue').textContent = speedLimit;
+        document.getElementById('streetName').textContent = car.currentRoad?.name || 'Unknown Road';
+        const geo = gameToGeo(car.x, car.y);
+        document.getElementById('coordsValue').textContent = `${geo.lat.toFixed(4)}°N ${Math.abs(geo.lon).toFixed(4)}°W`;
+        let heading = (car.angle * 180 / Math.PI + 90) % 360;
+        if (heading < 0) heading += 360;
+        const dirs = ['N', 'NE', 'E', 'SE', 'S', 'SW', 'W', 'NW'];
+        document.getElementById('headingValue').textContent = `${dirs[Math.round(heading / 45) % 8]} ${Math.round(heading)}°`;
+        document.getElementById('brakingDot').classList.toggle('active', car.isBraking);
+        document.getElementById('boostDot').classList.toggle('active', car.isBoosting);
+        document.getElementById('offRoadModeDot').classList.toggle('active', car.isOffRoadMode);
+        
+        // Mode HUD
+        if (state.gameMode === 'timeTrial') {
+            document.getElementById('modeTimer').textContent = formatTime(state.gameTimer);
+            if (state.timeTrialComplete) {
+                document.getElementById('modeInfo').textContent = '🏁 FINISH!';
+            } else {
+                document.getElementById('modeInfo').textContent = 'Race to the destination!';
+            }
+        } else if (state.gameMode === 'checkpoint') {
+            document.getElementById('modeTimer').textContent = formatTime(state.gameTimer);
+            document.getElementById('modeInfo').innerHTML = `Checkpoints: <span class="checkpoint-count">${state.checkpointsCollected}/${state.totalCheckpoints}</span>`;
+        }
+    }
+
+    // ============== DIRECTION INDICATORS ==============
+    function updateDirectionIndicators() {
+        const container = document.getElementById('directionIndicators');
+        container.innerHTML = '';
+        
+        const { width, height } = canvas;
+        const cam = state.camera;
+        const margin = 60; // Distance from screen edge
+        const car = state.car;
+        
+        // Helper: check if point is on screen and get screen position
+        function getScreenPos(worldX, worldY) {
+            const screenX = width / 2 + (worldX - cam.x) * cam.zoom;
+            const screenY = height / 2 + (worldY - cam.y) * cam.zoom;
+            return { x: screenX, y: screenY };
+        }
+        
+        // Helper: check if position is within visible screen
+        function isOnScreen(screenX, screenY, buffer = 50) {
+            return screenX >= buffer && screenX <= width - buffer && 
+                   screenY >= buffer && screenY <= height - buffer;
+        }
+        
+        // Helper: create direction indicator
+        function createIndicator(targetX, targetY, type, label, isComplete = false) {
+            const screenPos = getScreenPos(targetX, targetY);
+            
+            // If on screen, don't show indicator
+            if (isOnScreen(screenPos.x, screenPos.y)) return;
+            
+            // Calculate angle from screen center to target
+            const angle = Math.atan2(screenPos.y - height / 2, screenPos.x - width / 2);
+            
+            // Calculate position on screen edge
+            let indicatorX, indicatorY;
+            
+            // Find intersection with screen boundary
+            const centerX = width / 2;
+            const centerY = height / 2;
+            const maxX = width - margin;
+            const maxY = height - margin;
+            const minX = margin;
+            const minY = margin;
+            
+            // Calculate where the line intersects the screen boundary
+            const cos = Math.cos(angle);
+            const sin = Math.sin(angle);
+            
+            // Check each edge
+            let t = Infinity;
+            if (cos > 0) t = Math.min(t, (maxX - centerX) / cos);
+            else if (cos < 0) t = Math.min(t, (minX - centerX) / cos);
+            if (sin > 0) t = Math.min(t, (maxY - centerY) / sin);
+            else if (sin < 0) t = Math.min(t, (minY - centerY) / sin);
+            
+            indicatorX = centerX + cos * t;
+            indicatorY = centerY + sin * t;
+            
+            // Clamp to screen bounds
+            indicatorX = Math.max(margin, Math.min(width - margin, indicatorX));
+            indicatorY = Math.max(margin, Math.min(height - margin, indicatorY));
+            
+            // Calculate distance
+            const dist = Math.sqrt((targetX - car.x) ** 2 + (targetY - car.y) ** 2);
+            const distDisplay = dist < 1000 ? Math.round(dist) + 'm' : (dist / 1000).toFixed(1) + 'km';
+            
+            // Create indicator element
+            const indicator = document.createElement('div');
+            indicator.className = `direction-indicator ${type}${isComplete ? ' complete' : ''}`;
+            indicator.style.left = (indicatorX - 20) + 'px';
+            indicator.style.top = (indicatorY - 20) + 'px';
+            
+            // Arrow pointing toward target
+            const arrowAngle = angle * 180 / Math.PI;
+            indicator.innerHTML = `
+                <div class="direction-arrow" style="transform: rotate(${arrowAngle}deg)">➤</div>
+                <div class="direction-distance">${label ? label + ' ' : ''}${distDisplay}</div>
+            `;
+            
+            container.appendChild(indicator);
+        }
+        
+        // Time trial destination indicator
+        if (state.gameMode === 'timeTrial' && state.timeTrialDestination) {
+            createIndicator(
+                state.timeTrialDestination.x, 
+                state.timeTrialDestination.y, 
+                'destination', 
+                '🏁',
+                state.timeTrialComplete
+            );
+        }
+        
+        // Checkpoint indicators
+        if (state.gameMode === 'checkpoint') {
+            // Find nearest uncollected checkpoint
+            let nearestCheckpoint = null;
+            let nearestDist = Infinity;
+            
+            state.checkpoints.forEach(cp => {
+                if (cp.collected) return;
+                const dist = Math.sqrt((cp.x - car.x) ** 2 + (cp.y - car.y) ** 2);
+                if (dist < nearestDist) {
+                    nearestDist = dist;
+                    nearestCheckpoint = cp;
+                }
+            });
+            
+            // Show indicator for nearest checkpoint (or all if you prefer)
+            if (nearestCheckpoint) {
+                createIndicator(
+                    nearestCheckpoint.x,
+                    nearestCheckpoint.y,
+                    'checkpoint',
+                    '#' + nearestCheckpoint.index
+                );
+            }
+        }
+    }
+    function render() {
+        const { width, height } = canvas;
+        ctx.fillStyle = CONFIG.backgroundColor;
+        ctx.fillRect(0, 0, width, height);
+        ctx.save();
+        ctx.translate(width / 2, height / 2);
+        ctx.scale(state.camera.zoom, state.camera.zoom);
+        ctx.translate(-state.camera.x, -state.camera.y);
+        drawMapTiles();
+        drawSkidMarks();
+        drawRoads(ctx, false);
+        if (state.gameMode === 'checkpoint') drawCheckpoints();
+        if (state.gameMode === 'timeTrial') drawTimeTrialDestination();
+        drawPolice(ctx);
+        drawCar(ctx);
+        ctx.restore();
+        drawMinimap();
+        updateDirectionIndicators();
+    }
+
+    function drawSkidMarks() {
+        if (state.skidMarks.length === 0) return;
+        ctx.fillStyle = CONFIG.skidMarkColor;
+        for (let i = state.skidMarks.length - 1; i >= 0; i--) {
+            const mark = state.skidMarks[i];
+            const alpha = Math.max(0, 0.6 - mark.age * 0.001);
+            if (alpha <= 0) { state.skidMarks.splice(i, 1); continue; }
+            ctx.globalAlpha = alpha;
+            ctx.beginPath();
+            ctx.arc(mark.x, mark.y, 2, 0, Math.PI * 2);
+            ctx.fill();
+            mark.age++;
+        }
+        ctx.globalAlpha = 1;
+    }
+
+    function drawRoads(context, isMinimap = false) {
+        state.roads.forEach(road => {
+            if (road.points.length < 2) return;
+            const lineWidth = isMinimap ? 2 : road.width;
+            const isCurrentRoad = road === state.car.currentRoad;
+            if (!isMinimap) {
+                context.strokeStyle = isCurrentRoad ? '#00ffaa' : CONFIG.roadGlow;
+                context.lineWidth = lineWidth + 6;
+                context.lineCap = 'round';
+                context.lineJoin = 'round';
+                context.globalAlpha = isCurrentRoad ? 0.35 : 0.15;
+                context.beginPath();
+                context.moveTo(road.points[0].x, road.points[0].y);
+                road.points.slice(1).forEach(p => context.lineTo(p.x, p.y));
+                context.stroke();
+                context.globalAlpha = 1;
+            }
+            context.strokeStyle = isMinimap ? (isCurrentRoad ? '#00ffc8' : 'rgba(0, 255, 200, 0.4)') : CONFIG.roadColor;
+            context.lineWidth = lineWidth;
+            context.beginPath();
+            context.moveTo(road.points[0].x, road.points[0].y);
+            road.points.slice(1).forEach(p => context.lineTo(p.x, p.y));
+            context.stroke();
+        });
+    }
+
+    function drawCheckpoints() {
+        state.checkpoints.forEach(cp => {
+            if (cp.collected) return;
+            
+            // Calculate scale to keep markers visible when zoomed out
+            const minScreenSize = 30; // Minimum pixel size on screen
+            const baseRadius = CONFIG.checkpointRadius;
+            const screenRadius = baseRadius * state.camera.zoom;
+            const scaleFactor = screenRadius < minScreenSize ? minScreenSize / screenRadius : 1;
+            const radius = baseRadius * scaleFactor;
+            
+            // Outer glow ring (extra visible when zoomed out)
+            ctx.strokeStyle = 'rgba(255, 51, 102, 0.4)';
+            ctx.lineWidth = 8 * scaleFactor;
+            ctx.beginPath();
+            ctx.arc(cp.x, cp.y, radius * 1.4, 0, Math.PI * 2);
+            ctx.stroke();
+            
+            // Outer ring
+            ctx.strokeStyle = '#ff3366';
+            ctx.lineWidth = 3 * scaleFactor;
+            ctx.beginPath();
+            ctx.arc(cp.x, cp.y, radius, 0, Math.PI * 2);
+            ctx.stroke();
+            
+            // Inner pulsing fill
+            const pulse = Math.sin(performance.now() / 200) * 0.3 + 0.7;
+            ctx.fillStyle = `rgba(255, 51, 102, ${pulse * 0.4})`;
+            ctx.beginPath();
+            ctx.arc(cp.x, cp.y, radius * pulse, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // Number
+            ctx.fillStyle = '#fff';
+            ctx.font = `bold ${14 * scaleFactor}px Orbitron`;
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText(cp.index, cp.x, cp.y);
+        });
+    }
+
+    function drawTimeTrialDestination() {
+        const dest = state.timeTrialDestination;
+        if (!dest) return;
+        
+        // Calculate scale to keep marker visible when zoomed out
+        const minScreenSize = 35; // Minimum pixel size on screen
+        const baseRadius = CONFIG.checkpointRadius * 1.5;
+        const screenRadius = baseRadius * state.camera.zoom;
+        const scaleFactor = screenRadius < minScreenSize ? minScreenSize / screenRadius : 1;
+        const radius = baseRadius * scaleFactor;
+        
+        if (state.timeTrialComplete) {
+            // Green checkered flag when complete
+            ctx.strokeStyle = 'rgba(0, 255, 136, 0.4)';
+            ctx.lineWidth = 8 * scaleFactor;
+            ctx.beginPath();
+            ctx.arc(dest.x, dest.y, radius * 1.4, 0, Math.PI * 2);
+            ctx.stroke();
+            
+            ctx.strokeStyle = '#00ff88';
+            ctx.lineWidth = 4 * scaleFactor;
+            ctx.beginPath();
+            ctx.arc(dest.x, dest.y, radius, 0, Math.PI * 2);
+            ctx.stroke();
+            
+            ctx.fillStyle = 'rgba(0, 255, 136, 0.4)';
+            ctx.beginPath();
+            ctx.arc(dest.x, dest.y, radius, 0, Math.PI * 2);
+            ctx.fill();
+            
+            ctx.fillStyle = '#fff';
+            ctx.font = `bold ${20 * scaleFactor}px Orbitron`;
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText('✓', dest.x, dest.y);
+        } else {
+            // Pulsing finish flag
+            const pulse = Math.sin(performance.now() / 150) * 0.3 + 0.7;
+            
+            // Outer glow ring
+            ctx.strokeStyle = 'rgba(255, 204, 0, 0.4)';
+            ctx.lineWidth = 10 * scaleFactor;
+            ctx.beginPath();
+            ctx.arc(dest.x, dest.y, radius * 1.4, 0, Math.PI * 2);
+            ctx.stroke();
+            
+            ctx.strokeStyle = '#ffcc00';
+            ctx.lineWidth = 4 * scaleFactor;
+            ctx.beginPath();
+            ctx.arc(dest.x, dest.y, radius, 0, Math.PI * 2);
+            ctx.stroke();
+            
+            ctx.fillStyle = `rgba(255, 204, 0, ${pulse * 0.4})`;
+            ctx.beginPath();
+            ctx.arc(dest.x, dest.y, radius * pulse, 0, Math.PI * 2);
+            ctx.fill();
+            
+            ctx.fillStyle = '#fff';
+            ctx.font = `bold ${18 * scaleFactor}px Orbitron`;
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText('🏁', dest.x, dest.y);
+        }
+    }
+
+    function drawPolice(context) {
+        state.police.forEach(cop => {
+            context.save();
+            context.translate(cop.x, cop.y);
+            context.rotate(cop.angle);
+            context.fillStyle = 'rgba(0, 0, 0, 0.4)';
+            context.beginPath();
+            context.roundRect(-cop.width/2 + 2, -cop.height/2 + 2, cop.width, cop.height, 2);
+            context.fill();
+            context.shadowColor = cop.isChasing ? '#ffffff' : '#666666';
+            context.shadowBlur = cop.isChasing ? 15 : 5;
+            context.fillStyle = '#111111';
+            context.beginPath();
+            context.roundRect(-cop.width/2, -cop.height/2, cop.width, cop.height, 2);
+            context.fill();
+            context.fillStyle = '#eeeeee';
+            context.beginPath();
+            context.roundRect(0, -cop.height/2, cop.width/2, cop.height, [0, 2, 2, 0]);
+            context.fill();
+            if (cop.isChasing) {
+                const sirenTime = cop.sirenPhase;
+                const redOn = Math.sin(sirenTime) > 0;
+                const blueOn = Math.sin(sirenTime + Math.PI) > 0;
+                context.shadowColor = '#ff0000';
+                context.shadowBlur = redOn ? 20 : 5;
+                context.fillStyle = redOn ? '#ff0000' : '#660000';
+                context.beginPath();
+                context.arc(-cop.width/6, 0, 2, 0, Math.PI * 2);
+                context.fill();
+                context.shadowColor = '#0066ff';
+                context.shadowBlur = blueOn ? 20 : 5;
+                context.fillStyle = blueOn ? '#0066ff' : '#000066';
+                context.beginPath();
+                context.arc(cop.width/6, 0, 2, 0, Math.PI * 2);
+                context.fill();
+            }
+            context.shadowBlur = 10;
+            context.shadowColor = '#ffffff';
+            context.fillStyle = '#ffffff';
+            context.beginPath();
+            context.arc(cop.width/2 - 1, -cop.height/4, 1.5, 0, Math.PI * 2);
+            context.arc(cop.width/2 - 1, cop.height/4, 1.5, 0, Math.PI * 2);
+            context.fill();
+            context.restore();
+        });
+    }
+
+    function drawCar(context) {
+        const car = state.car;
+        
+        // Calculate scale factor to keep car visible when zoomed out
+        const minSize = 20; // Minimum pixel size on screen
+        const baseSize = car.width;
+        const screenSize = baseSize * state.camera.zoom;
+        const scaleFactor = screenSize < minSize ? minSize / screenSize : 1;
+        
+        const w = car.width * scaleFactor;
+        const h = car.height * scaleFactor;
+        
+        context.save();
+        context.translate(car.x, car.y);
+        context.rotate(car.angle);
+        
+        // Shadow
+        context.fillStyle = 'rgba(0, 0, 0, 0.4)';
+        context.beginPath();
+        context.roundRect(-w/2 + 3, -h/2 + 3, w, h, 3 * scaleFactor);
+        context.fill();
+        
+        // Body
+        context.shadowColor = CONFIG.carColor;
+        context.shadowBlur = (car.isSkidding ? 30 : 20) * scaleFactor;
+        context.fillStyle = CONFIG.carColor;
+        context.beginPath();
+        context.roundRect(-w/2, -h/2, w, h, 3 * scaleFactor);
+        context.fill();
+        
+        // Windshield
+        context.fillStyle = 'rgba(100, 200, 255, 0.4)';
+        context.beginPath();
+        context.roundRect(w/6, -h/3, w/4, h/1.5, 1 * scaleFactor);
+        context.fill();
+        
+        // Headlights
+        context.shadowBlur = 15 * scaleFactor;
+        context.shadowColor = '#ffffff';
+        context.fillStyle = '#ffffff';
+        context.beginPath();
+        context.arc(w/2 - 2 * scaleFactor, -h/3, 2.5 * scaleFactor, 0, Math.PI * 2);
+        context.arc(w/2 - 2 * scaleFactor, h/3, 2.5 * scaleFactor, 0, Math.PI * 2);
+        context.fill();
+        
+        // Taillights
+        context.shadowColor = '#ff0000';
+        context.shadowBlur = (car.isBraking ? 25 : 10) * scaleFactor;
+        context.fillStyle = car.isBraking ? '#ff3333' : '#aa0000';
+        context.beginPath();
+        context.arc(-w/2 + 2 * scaleFactor, -h/3, 2 * scaleFactor, 0, Math.PI * 2);
+        context.arc(-w/2 + 2 * scaleFactor, h/3, 2 * scaleFactor, 0, Math.PI * 2);
+        context.fill();
+        
+        context.restore();
+    }
+
+    function drawMinimap() {
+        const mctx = minimapCtx;
+        const width = minimapCanvas.width;
+        const height = minimapCanvas.height;
+        const car = state.car;
+        
+        // Clear minimap
+        mctx.fillStyle = 'rgba(10, 10, 15, 0.95)';
+        mctx.fillRect(0, 0, width, height);
+        
+        if (state.roads.length === 0) return;
+        
+        // Calculate scale to fit roads in minimap
+        // Show area around car (roughly 2000 game units in each direction)
+        const viewRadius = 1500;
+        const scale = (width / 2) / viewRadius;
+        const cx = width / 2;
+        const cy = height / 2;
+        
+        mctx.save();
+        mctx.translate(cx, cy);
+        
+        // Draw roads relative to car position
+        state.roads.forEach(road => {
+            if (road.points.length < 2) return;
+            
+            // Check if any part of road is visible in minimap
+            let visible = false;
+            for (const p of road.points) {
+                const dx = Math.abs(p.x - car.x);
+                const dy = Math.abs(p.y - car.y);
+                if (dx < viewRadius * 1.5 && dy < viewRadius * 1.5) {
+                    visible = true;
+                    break;
+                }
+            }
+            if (!visible) return;
+            
+            const isCurrentRoad = road === car.currentRoad;
+            mctx.strokeStyle = isCurrentRoad ? '#00ffc8' : 'rgba(0, 255, 200, 0.5)';
+            mctx.lineWidth = isCurrentRoad ? 3 : 2;
+            mctx.lineCap = 'round';
+            mctx.lineJoin = 'round';
+            
+            mctx.beginPath();
+            const firstPoint = road.points[0];
+            mctx.moveTo((firstPoint.x - car.x) * scale, (firstPoint.y - car.y) * scale);
+            for (let i = 1; i < road.points.length; i++) {
+                const p = road.points[i];
+                mctx.lineTo((p.x - car.x) * scale, (p.y - car.y) * scale);
+            }
+            mctx.stroke();
+        });
+        
+        // Draw checkpoints on minimap
+        if (state.gameMode === 'checkpoint') {
+            state.checkpoints.forEach(cp => {
+                if (cp.collected) return;
+                const x = (cp.x - car.x) * scale;
+                const y = (cp.y - car.y) * scale;
+                // Only draw if within view
+                if (Math.abs(x) < width/2 && Math.abs(y) < height/2) {
+                    mctx.fillStyle = '#ff3366';
+                    mctx.beginPath();
+                    mctx.arc(x, y, 5, 0, Math.PI * 2);
+                    mctx.fill();
+                    // Number
+                    mctx.fillStyle = '#fff';
+                    mctx.font = 'bold 8px Orbitron';
+                    mctx.textAlign = 'center';
+                    mctx.textBaseline = 'middle';
+                    mctx.fillText(cp.index, x, y);
+                }
+            });
+        }
+        
+        // Draw time trial destination on minimap
+        if (state.gameMode === 'timeTrial' && state.timeTrialDestination) {
+            const dest = state.timeTrialDestination;
+            const x = (dest.x - car.x) * scale;
+            const y = (dest.y - car.y) * scale;
+            
+            // Draw even if off-minimap (at edge)
+            const clampedX = Math.max(-width/2 + 8, Math.min(width/2 - 8, x));
+            const clampedY = Math.max(-height/2 + 8, Math.min(height/2 - 8, y));
+            
+            mctx.fillStyle = state.timeTrialComplete ? '#00ff88' : '#ffcc00';
+            mctx.beginPath();
+            mctx.arc(clampedX, clampedY, 6, 0, Math.PI * 2);
+            mctx.fill();
+            
+            // If off-screen, show direction indicator
+            if (Math.abs(x) > width/2 - 8 || Math.abs(y) > height/2 - 8) {
+                mctx.strokeStyle = state.timeTrialComplete ? '#00ff88' : '#ffcc00';
+                mctx.lineWidth = 2;
+                mctx.beginPath();
+                mctx.arc(clampedX, clampedY, 8, 0, Math.PI * 2);
+                mctx.stroke();
+            }
+        }
+        
+        // Draw police on minimap
+        if (state.policeEnabled) {
+            state.police.forEach(cop => {
+                const x = (cop.x - car.x) * scale;
+                const y = (cop.y - car.y) * scale;
+                if (Math.abs(x) < width/2 && Math.abs(y) < height/2) {
+                    mctx.fillStyle = cop.isChasing ? '#ff0000' : '#0066ff';
+                    mctx.beginPath();
+                    mctx.arc(x, y, 4, 0, Math.PI * 2);
+                    mctx.fill();
+                }
+            });
+        }
+        
+        mctx.restore();
+        
+        // Draw car in center (always visible)
+        mctx.save();
+        mctx.translate(cx, cy);
+        mctx.rotate(car.angle);
+        
+        // Car glow
+        mctx.shadowColor = CONFIG.carColor;
+        mctx.shadowBlur = 8;
+        
+        // Car triangle
+        mctx.fillStyle = CONFIG.carColor;
+        mctx.beginPath();
+        mctx.moveTo(8, 0);
+        mctx.lineTo(-5, -5);
+        mctx.lineTo(-3, 0);
+        mctx.lineTo(-5, 5);
+        mctx.closePath();
+        mctx.fill();
+        
+        mctx.restore();
+        
+        // Draw border
+        mctx.strokeStyle = 'rgba(0, 255, 200, 0.3)';
+        mctx.lineWidth = 1;
+        mctx.strokeRect(0, 0, width, height);
+        
+        // Draw compass direction
+        mctx.fillStyle = 'rgba(255, 255, 255, 0.5)';
+        mctx.font = '10px Orbitron';
+        mctx.textAlign = 'center';
+        mctx.fillText('N', cx, 12);
+    }
+
+    // ============== GAME LOOP ==============
+    function gameLoop(currentTime) {
+        if (!state.gameStarted) return;
+        if (state.gamePaused) return;
+        if (state.isLoading) {
+            // Still render the map while loading, but don't update physics
+            render();
+            requestAnimationFrame(gameLoop);
+            return;
+        }
+        
+        const dt = Math.min((currentTime - state.lastTime) / 1000, 0.05);
+        state.lastTime = currentTime;
+        
+        update(dt);
+        render();
+        
+        requestAnimationFrame(gameLoop);
+    }
+
+    // ============== EVENT SETUP ==============
+    function setupEvents() {
+        // Keyboard
+        window.addEventListener('keydown', e => {
+            state.keys[e.code] = true;
+            if (e.code === 'Escape') {
+                if (state.gamePaused) resumeGame();
+                else pauseGame();
+            }
+            if ((e.code === 'Equal' || e.code === 'NumpadAdd') && state.gameStarted) {
+                state.camera.manualZoom = true;
+                state.camera.targetZoom = Math.min(CONFIG.maxCameraZoom, state.camera.targetZoom * 1.15);
+            }
+            if ((e.code === 'Minus' || e.code === 'NumpadSubtract') && state.gameStarted) {
+                state.camera.manualZoom = true;
+                state.camera.targetZoom = Math.max(CONFIG.minCameraZoom, state.camera.targetZoom / 1.18);
+            }
+            if (e.code === 'KeyR' && state.gameStarted && !state.gamePaused) {
+                state.camera.manualZoom = false;
+                state.camera.targetZoom = CONFIG.baseCameraZoom;
+            }
+        });
+        window.addEventListener('keyup', e => { state.keys[e.code] = false; });
+        
+        // Mouse
+        let isDragging = false, lastMouseX, lastMouseY;
+        canvas.addEventListener('mousedown', e => { isDragging = true; lastMouseX = e.clientX; lastMouseY = e.clientY; });
+        window.addEventListener('mouseup', () => { isDragging = false; });
+        window.addEventListener('mousemove', e => {
+            if (isDragging && state.gameStarted) {
+                state.camera.x -= (e.clientX - lastMouseX) / state.camera.zoom;
+                state.camera.y -= (e.clientY - lastMouseY) / state.camera.zoom;
+                lastMouseX = e.clientX; lastMouseY = e.clientY;
+            }
+        });
+        canvas.addEventListener('wheel', e => {
+            if (!state.gameStarted) return;
+            e.preventDefault();
+            state.camera.manualZoom = true;
+            const zoomFactor = e.deltaY > 0 ? 0.85 : 1.18;
+            state.camera.targetZoom = Math.max(CONFIG.minCameraZoom, Math.min(CONFIG.maxCameraZoom, state.camera.targetZoom * zoomFactor));
+        }, { passive: false });
+        
+        // Resize
+        window.addEventListener('resize', () => {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        });
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+        
+        // Title screen - Tab Navigation
+        document.querySelectorAll('.tab-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                // Update tab buttons
+                document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                // Update tab content
+                document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+                document.getElementById('tab-' + btn.dataset.tab).classList.add('active');
+            });
+        });
+        
+        // Title screen - Location selection
+        document.querySelectorAll('.location-card').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.querySelectorAll('.location-card').forEach(b => b.classList.remove('selected'));
+                btn.classList.add('selected');
+                CONFIG.currentLocation = btn.dataset.location;
+            });
+        });
+        
+        // Title screen - Mode selection
+        document.querySelectorAll('.mode-card').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.querySelectorAll('.mode-card').forEach(b => b.classList.remove('selected'));
+                btn.classList.add('selected');
+                state.gameMode = btn.dataset.mode;
+            });
+        });
+        
+        document.getElementById('startBtn').addEventListener('click', startGame);
+        
+        // Pause menu
+        document.getElementById('resumeBtn').addEventListener('click', resumeGame);
+        document.getElementById('restartBtn').addEventListener('click', restartGame);
+        document.getElementById('mainMenuBtn').addEventListener('click', goToMainMenu);
+        
+        // Results
+        document.getElementById('playAgainBtn').addEventListener('click', restartGame);
+        document.getElementById('resultsMenuBtn').addEventListener('click', goToMainMenu);
+        
+        // In-game buttons
+        document.getElementById('locationBtn').addEventListener('click', () => {
+            const newLoc = CONFIG.currentLocation === 'baltimore' ? 'hollywood' : 'baltimore';
+            CONFIG.currentLocation = newLoc;
+            CONFIG.startLat = LOCATIONS[newLoc].lat;
+            CONFIG.startLon = LOCATIONS[newLoc].lon;
+            document.getElementById('locationBtn').textContent = '📍 ' + (newLoc === 'baltimore' ? 'Hollywood' : 'Baltimore');
+            document.getElementById('locationValue').textContent = LOCATIONS[newLoc].name;
+            loadRoads();
+        });
+        document.getElementById('mapToggleBtn').addEventListener('click', () => {
+            state.mapType = state.mapType === 'satellite' ? 'street' : 'satellite';
+            document.getElementById('mapToggleBtn').textContent = state.mapType === 'satellite' ? '🗺️ Street View' : '🛰️ Satellite';
+        });
+        document.getElementById('policeBtn').addEventListener('click', () => {
+            state.policeEnabled = !state.policeEnabled;
+            document.getElementById('policeBtn').classList.toggle('active', state.policeEnabled);
+            if (state.policeEnabled) spawnPolice();
+            else state.police = [];
+        });
+        document.getElementById('respawnBtn').addEventListener('click', respawnCar);
+        document.getElementById('reloadBtn').addEventListener('click', () => {
+            state.tiles = {};
+            loadRoads();
+        });
+        
+        // Home button
+        document.getElementById('homeBtn').addEventListener('click', goToMainMenu);
+        
+        // Controls tab toggle
+        document.getElementById('controlsTabHeader').addEventListener('click', () => {
+            document.getElementById('controlsTab').classList.toggle('expanded');
+        });
+    }
+
+    // ============== INIT ==============
+    setupEvents();
+    </script>
+</body>
+</html>
