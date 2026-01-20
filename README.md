@@ -1,29 +1,48 @@
+
 # Street Racer (Beta) — Real-World Map Racing
 
-Street Racer is a 2D open-world driving game that turns real cities into playable race environments.
+Street Racer is a browser-based racing game where *real cities become the tracks*.
 
-Instead of handcrafted tracks, Street Racer loads real street geometry from OpenStreetMap and lets you drive it as an arcade-style top-down racer. Cities are not “themes” they *are* the tracks themselves.
+Instead of handcrafted levels, Street Racer loads live street geometry from OpenStreetMap and turns actual places into playable race environments. Every curve, intersection, and grid comes from the real world. You are not driving on a theme. You are driving a place.
 
-Every street, curve, bridge, and grid comes from the real world. The city becomes the course.
+This build represents a fully playable beta with multiple cities, game modes, police chases, custom tracks, and real map imagery.
 
-Current locations:
-- Baltimore, Maryland  
-- Hollywood, California  
+Play here:  
+https://rrg314.github.io/StreetRacer/
 
-This is an early **beta** build. The game is fully playable end-to-end, but still being refined. This release represents the foundation of a long-term project exploring what “real-world virtual racing” can become.
+---
+
+## Current Cities
+
+- Baltimore, MD  
+- Hollywood, CA  
+- New York, NY  
+- Miami, FL  
+- Tokyo, Japan  
+- Monaco  
+- Nürburgring  
+
+You can also:
+- Search for any city by name  
+- Enter custom latitude/longitude  
+- Adjust the load radius from 1–10 miles  
+
+Any mapped location can become a race environment.
 
 ---
 
 ## Game Modes
 
 - **Free Roam**  
-  Explore the city freely. Drive the streets, test speed, and learn the layout.
+  Explore the city freely. Learn the streets, test speed, and drive without pressure.
 
 - **Time Trial**  
-  Race from your starting point to a destination on the far side of the city as fast as possible.
+  Race across the city to a dynamically chosen destination as fast as possible.
 
 - **Checkpoints**  
-  Collect all checkpoints placed throughout the city. Your time stops when the last one is reached.
+  Collect markers scattered across real neighborhoods. Finish when all are cleared.
+
+Each mode includes its own HUD behavior, timer, and results screen.
 
 ---
 
@@ -36,7 +55,7 @@ This is an early **beta** build. The game is fully playable end-to-end, but stil
 - **D / →** – Turn Right  
 - **Space** – Handbrake  
 - **Ctrl** – Boost  
-- **Shift** – Off-Road Mode (leave streets)  
+- **Shift** – Off-Road Mode  
 
 ### Camera & View
 - **Mouse Drag** – Pan camera  
@@ -48,52 +67,81 @@ This is an early **beta** build. The game is fully playable end-to-end, but stil
 
 ## Features
 
-- Real street layouts from OpenStreetMap  
-- Two cities with distinct layouts and feel  
-- Three gameplay modes  
-- Speed limits per road  
-- Police chase mode  
-- Off-road driving toggle  
+- Real street layouts generated from OpenStreetMap  
+- Live street and satellite map imagery  
+- Multiple cities with unique layout and feel  
+- Full menu system and game flow  
+- Police chase system with pursuit and capture  
+- Boost, drifting, and off-road driving  
 - Dynamic camera and minimap  
-- HUD with speed, heading, coordinates, and street name  
-- Street map and satellite map modes  
-- Respawn and reload controls  
+- HUD with speed, speed limit, heading, coordinates, and street name  
+- Smarter spawning on valid streets  
+- Results screens for timed modes  
+- Custom track recording  
+  - Draw your own track by driving  
+  - Start/finish markers  
+  - Loop detection  
+  - Tracks behave like real roads  
 
-This build is intentionally lightweight and runs directly in the browser.
 
 ---
 
-## Vision & Direction
+## Status
 
-Street Racer is the first step toward a larger idea:  
-**the real world as a race space.**
+Street Racer is in **early beta**.
 
-This 2D version establishes the core concept that any city can become a track. Future development will expand on this foundation:
+It is fully playable end-to-end, but still being refined. Real-world map data can be unpredictable. In rare cases, streets may not line up perfectly on first load. If that happens, click **Reload Map** and they will align correctly.
 
-- Additional cities and regions  
-- More structured race routes based on real geography  
-- Heavier city models and denser environments  
-- Expanded game modes and challenges  
-- A full 3D version that brings real streets into immersive space  
-- Virtual-app and installable experiences for long-term play  
+Performance may vary depending on location, radius, and machine.
 
-The goal is not just to build a racing game, but to explore what it means to *drive the world itself*.
+---
 
-By playing this beta, you are experiencing the beginning of that direction.
+## Vision
+
+Street Racer is built around a simple idea:
+
+**The real world is the racetrack.**
+
+This 2D version establishes the foundation. The long-term direction includes:
+
+- Full cities like Los Angeles, Chicago, and beyond  
+- European, Middle Eastern, and Asian cities  
+- Smaller towns and rural areas  
+- Structured race routes based on real geography  
+- Traffic, vehicle damage, and deeper physics  
+- Car selection and customization  
+- Shared worlds and multiplayer  
+- A full 3D version where players can drive through their own streets  
+
+The goal is not just another racing game, but a new way to experience the world through motion.
+
+---
+
+## Running Locally
+
+You can open `index.html` directly, but some browsers restrict network access from `file://`.
+
+Recommended:
+
+```bash
+python -m http.server
+````
+
+Then open:
+
+```
+http://localhost:8000
+```
 
 ---
 
 ## Open Data & Attribution
 
-Street Racer uses open geographic data and community services:
+Street geometry is sourced from **OpenStreetMap contributors**.
+Road data is retrieved via the **Overpass API**.
 
-- Street and building geometry is sourced from **OpenStreetMap contributors**  
-  © OpenStreetMap contributors — https://www.openstreetmap.org
+© OpenStreetMap contributors
+[https://www.openstreetmap.org](https://www.openstreetmap.org)
 
-- Road data is retrieved via the **Overpass API**, a community-operated service for querying OpenStreetMap data.
-
-- Background map tiles may be loaded from OpenStreetMap or third-party providers depending on in-game mode.
-
-OpenStreetMap data is available under the Open Database License (ODbL).  
-This project uses the data at runtime and does not redistribute a derived map database.
+This project uses map data at runtime and does not redistribute a derived database.
 
