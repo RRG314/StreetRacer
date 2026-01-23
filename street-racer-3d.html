@@ -279,7 +279,7 @@ const geoToWorld = (lat, lon) => ({ x: (lon - LOC.lon) * SCALE * Math.cos(LOC.la
 
 const car = { x:0, z:0, angle:0, speed:0, vx:0, vz:0, grip:1, onRoad:true, road:null, boost:false, boostTime:0, boostReady:true, driftAngle:0 };
 const keys = {};
-let roads = [], roadMeshes = [], buildingMeshes = [], scene, camera, renderer, carMesh, wheelMeshes = [];
+let roads = [], roadMeshes = [], buildingMeshes = [], buildings = [], scene, camera, renderer, carMesh, wheelMeshes = [];
 let gameStarted = false, paused = false, gameMode = 'free', gameTimer = 0, camMode = 0, selLoc = 'baltimore';
 let policeOn = false, police = [], policeMeshes = [], policeHits = 0;
 let checkpoints = [], cpMeshes = [], cpCollected = 0;
@@ -288,20 +288,24 @@ let customTrack = [], trackMesh = null, isRecording = false;
 const mctx = document.getElementById('minimap').getContext('2d');
 
 const CFG = { 
-    maxSpd: 240, offMax: 40, accel: 45, boostAccel: 180, brake: 200, friction: 40, offFriction: 200,
-    boostMax: 280, boostDur: 2,
-    brakeForce: 3,       // How fast Space brakes
-    // Grip settings
-    gripRoad: 0.92,      // Normal road grip
-    gripOff: 0.6,        // Off-road grip
-    gripBrake: 0.5,      // Grip while braking hard
-    gripDrift: 0.35,     // Grip while brake+turning (drift mode!)
-    driftRec: 5,         // How fast car realigns (lower = longer drifts)
-    // Turn settings
-    turnLow: 3.0,        // Turn rate at low speed
-    turnHigh: 1.5,       // Turn rate at high speed  
-    turnMin: 20,         // Speed where turn rate starts reducing
-    cpRadius: 25, trialTime: 120, policeSpd: 180, policeAccel: 80, policeDist: 800 
+    maxSpd: 120, offMax: 60, accel: 25, boostAccel: 45, brake: 150, friction: 25, offFriction: 120,
+    boostMax: 140, boostDur: 2.5,
+    brakeForce: 2.5,     // Realistic braking
+    // Grip settings - realistic car physics
+    gripRoad: 0.88,      // Normal road grip - realistic
+    gripOff: 0.70,       // Off-road grip
+    gripBrake: 0.60,     // Grip while braking
+    gripDrift: 0.45,     // Grip while drifting
+    driftRec: 6,         // Car realignment speed
+    // Turn settings - realistic steering
+    turnLow: 1.8,        // Turn rate at low speed - more realistic
+    turnHigh: 0.8,       // Turn rate at high speed - realistic
+    turnMin: 30,         // Speed where turn rate starts reducing
+    // Road boundary settings
+    roadForce: 0.93,     // How much car slows when leaving road (strong)
+    roadPushback: 0.3,   // How much car is pushed back toward road
+    maxOffDist: 15,      // Max distance off road before strong pushback
+    cpRadius: 25, trialTime: 120, policeSpd: 140, policeAccel: 60, policeDist: 800 
 };
 
 function init() {
@@ -479,7 +483,7 @@ async function loadRoads() {
     const locName = selLoc === 'custom' ? (customLoc?.name || 'Custom') : LOCS[selLoc].name;
     showLoad('Loading ' + locName + '...');
     roadMeshes.forEach(m => scene.remove(m)); roadMeshes = []; roads = [];
-    buildingMeshes.forEach(m => scene.remove(m)); buildingMeshes = [];
+    buildingMeshes.forEach(m => scene.remove(m)); buildingMeshes = []; buildings = [];
     
     if (selLoc === 'custom') {
         const lat = parseFloat(document.getElementById('customLat').value);
@@ -563,6 +567,9 @@ async function loadRoads() {
                     else height = 8 + Math.random() * 12;
                 }
                 
+                // Store building collision data (2D polygon)
+                buildings.push({ pts: pts });
+                
                 // Create extruded building shape
                 const shape = new THREE.Shape();
                 pts.forEach((p, i) => {
@@ -616,6 +623,118 @@ function findNearestRoad(x, z) {
         }
     });
     return best;
+}
+
+// Point-in-polygon test using ray casting algorithm
+function pointInPolygon(x, z, polygon) {
+    let inside = false;
+    for (let i = 0, j = polygon.length - 1; i < polygon.length; j = i++) {
+        const xi = polygon[i].x, zi = polygon[i].z;
+        const xj = polygon[j].x, zj = polygon[j].z;
+        const intersect = ((zi > z) !== (zj > z)) && (x < (xj - xi) * (z - zi) / (zj - zi) + xi);
+        if (intersect) inside = !inside;
+    }
+    return inside;
+}
+
+// Check if car collides with any building and return collision info
+function checkBuildingCollision(x, z, carRadius = 2) {
+    for (let i = 0; i < buildings.length; i++) {
+        const building = buildings[i];
+        
+        // Quick bounding box check first
+        let minX = Infinity, maxX = -Infinity, minZ = Infinity, maxZ = -Infinity;
+        building.pts.forEach(p => {
+            minX = Math.min(minX, p.x);
+            maxX = Math.max(maxX, p.x);
+            minZ = Math.min(minZ, p.z);
+            maxZ = Math.max(maxZ, p.z);
+        });
+        
+        // Expand bounds by car radius
+        if (x < minX - carRadius || x > maxX + carRadius || z < minZ - carRadius || z > maxZ + carRadius) {
+            continue; // Car is far from this building
+        }
+        
+        // Check if car center is inside building
+        const isInside = pointInPolygon(x, z, building.pts);
+        
+        // Find nearest edge and distance
+        let nearestEdgeDist = Infinity;
+        let nearestEdgeInfo = null;
+        
+        for (let j = 0; j < building.pts.length; j++) {
+            const p1 = building.pts[j];
+            const p2 = building.pts[(j + 1) % building.pts.length];
+            
+            // Distance from point to line segment
+            const dx = p2.x - p1.x;
+            const dz = p2.z - p1.z;
+            const len2 = dx * dx + dz * dz;
+            
+            if (len2 === 0) continue;
+            
+            let t = ((x - p1.x) * dx + (z - p1.z) * dz) / len2;
+            t = Math.max(0, Math.min(1, t));
+            
+            const nearestX = p1.x + t * dx;
+            const nearestZ = p1.z + t * dz;
+            const dist = Math.hypot(x - nearestX, z - nearestZ);
+            
+            if (dist < nearestEdgeDist) {
+                nearestEdgeDist = dist;
+                
+                // Calculate perpendicular direction from edge
+                // Edge direction
+                const edgeDx = p2.x - p1.x;
+                const edgeDz = p2.z - p1.z;
+                
+                // Perpendicular to edge (two possible directions)
+                let perpX = -edgeDz;
+                let perpZ = edgeDx;
+                const perpLen = Math.hypot(perpX, perpZ);
+                
+                if (perpLen > 0) {
+                    perpX /= perpLen;
+                    perpZ /= perpLen;
+                    
+                    // Determine which direction points away from building
+                    // Check which side of the edge the car is on
+                    const toCarX = x - nearestX;
+                    const toCarZ = z - nearestZ;
+                    const dotProduct = toCarX * perpX + toCarZ * perpZ;
+                    
+                    // If dot product is negative, flip the perpendicular
+                    if (dotProduct < 0) {
+                        perpX = -perpX;
+                        perpZ = -perpZ;
+                    }
+                    
+                    nearestEdgeInfo = {
+                        nearestX,
+                        nearestZ,
+                        pushX: perpX,
+                        pushZ: perpZ,
+                        dist
+                    };
+                }
+            }
+        }
+        
+        // If inside building OR too close to edge, return collision
+        if (isInside || (nearestEdgeDist < carRadius && nearestEdgeInfo)) {
+            return {
+                collision: true,
+                building,
+                inside: isInside,
+                nearestPoint: nearestEdgeInfo ? { x: nearestEdgeInfo.nearestX, z: nearestEdgeInfo.nearestZ } : null,
+                pushX: nearestEdgeInfo ? nearestEdgeInfo.pushX : 0,
+                pushZ: nearestEdgeInfo ? nearestEdgeInfo.pushZ : 0,
+                penetration: carRadius - nearestEdgeDist
+            };
+        }
+    }
+    return { collision: false };
 }
 
 function update(dt) {
@@ -723,20 +842,97 @@ function update(dt) {
     
     let nx = car.x + car.vx * dt, nz = car.z + car.vz * dt;
     
+    // Strict road boundary enforcement (unless in off-road mode)
     if (!offMode && roads.length > 0) {
         const chk = findNearestRoad(nx, nz);
-        const hw = chk.road ? chk.road.width / 2 : 8, soft = hw + 2, hard = hw + 6;
-        if (chk.dist > soft && chk.pt) {
-            const over = Math.min(1, (chk.dist - soft) / (hard - soft));
-            const px = chk.pt.x - nx, pz = chk.pt.z - nz, pd = Math.hypot(px, pz);
-            if (pd > 0) { nx += (px/pd) * over * 0.6 * (chk.dist - soft); nz += (pz/pd) * over * 0.6 * (chk.dist - soft); }
-            if (chk.dist > hard) {
-                car.speed *= 0.85; car.vx *= 0.85; car.vz *= 0.85;
-                const pa = Math.atan2(nz - chk.pt.z, nx - chk.pt.x);
-                nx = chk.pt.x + Math.cos(pa) * (hw + 1); nz = chk.pt.z + Math.sin(pa) * (hw + 1);
+        const hw = chk.road ? chk.road.width / 2 : 8;
+        const softBoundary = hw + 4;    // Slightly larger buffer
+        const hardBoundary = hw + 10;   // Harder limit further out
+        
+        if (chk.dist > softBoundary && chk.pt) {
+            // Calculate how far over the boundary
+            const overAmount = chk.dist - softBoundary;
+            const overFactor = Math.min(1, overAmount / (hardBoundary - softBoundary));
+            
+            // Push car back toward road
+            const px = chk.pt.x - nx;
+            const pz = chk.pt.z - nz;
+            const pd = Math.hypot(px, pz);
+            
+            if (pd > 0.1) {
+                // Gentler pushback that scales with distance
+                const pushStrength = 0.5 + overFactor * 0.4; // 0.5 to 0.9
+                nx += (px / pd) * overAmount * pushStrength;
+                nz += (pz / pd) * overAmount * pushStrength;
+            }
+            
+            // Slow down when off road
+            const slowdown = Math.pow(0.95, overFactor * 3);
+            car.speed *= slowdown;
+            car.vx *= slowdown;
+            car.vz *= slowdown;
+            
+            // Hard boundary - absolute limit (but gentler)
+            if (chk.dist > hardBoundary) {
+                // Force car back onto road edge
+                const angle = Math.atan2(nz - chk.pt.z, nx - chk.pt.x);
+                nx = chk.pt.x + Math.cos(angle) * (hw + 3);
+                nz = chk.pt.z + Math.sin(angle) * (hw + 3);
+                // Speed penalty
+                car.speed *= 0.6;
+                car.vx *= 0.6;
+                car.vz *= 0.6;
             }
         }
     }
+    
+    // Building collision detection - check BEFORE applying position
+    const buildingCheck = checkBuildingCollision(nx, nz, 2.5);
+    if (buildingCheck.collision) {
+        if (buildingCheck.inside) {
+            // Car is inside building - force push out to nearest edge
+            if (buildingCheck.nearestPoint) {
+                // Push car completely outside the building
+                const pushDist = 3.0; // Push 3 meters away from edge
+                nx = buildingCheck.nearestPoint.x + buildingCheck.pushX * pushDist;
+                nz = buildingCheck.nearestPoint.z + buildingCheck.pushZ * pushDist;
+                
+                // Kill all velocity
+                car.speed = 0;
+                car.vx = 0;
+                car.vz = 0;
+            } else {
+                // Fallback: revert to previous position
+                nx = car.x;
+                nz = car.z;
+                car.speed *= 0.1;
+                car.vx *= 0.1;
+                car.vz *= 0.1;
+            }
+        } else {
+            // Car is approaching/touching building edge
+            // Push away from the building with extra margin
+            const pushDist = buildingCheck.penetration + 1.0; // Push out plus 1m buffer
+            nx += buildingCheck.pushX * pushDist;
+            nz += buildingCheck.pushZ * pushDist;
+            
+            // Reduce speed significantly when hitting building
+            const hitAngle = Math.atan2(car.vz, car.vx);
+            const wallAngle = Math.atan2(buildingCheck.pushZ, buildingCheck.pushX);
+            let angleDiff = Math.abs(hitAngle - wallAngle);
+            if (angleDiff > Math.PI) angleDiff = 2 * Math.PI - angleDiff;
+            
+            // Head-on collision = stop completely
+            // Glancing blow = slide along
+            const headOnFactor = Math.abs(Math.cos(angleDiff));
+            const speedReduction = 0.1 + (1 - headOnFactor) * 0.3; // 0.1 to 0.4
+            
+            car.speed *= speedReduction;
+            car.vx *= speedReduction;
+            car.vz *= speedReduction;
+        }
+    }
+    
     car.x = nx; car.z = nz;
     carMesh.position.set(car.x, 0, car.z);
     carMesh.rotation.y = car.angle;
